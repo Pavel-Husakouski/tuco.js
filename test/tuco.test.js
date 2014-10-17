@@ -138,6 +138,25 @@ describe ('option',function(){
     })
 });
 
+describe('optional implicit `all` for the arguments', function(){
+    it('value null when no match', function(){
+        var parse = optional(word('text'), word('text'));
+        var r = parse('text and etc.');
+        
+        assert(r != null);
+        assert(r.value == null);
+        assert(r.rest == 'text and etc.');
+    });
+
+    it('value not null when match', function(){
+        var parse = optional(word('text'), word('text'));
+        var r = parse('texttext and etc.');
+        
+        assert(r.value.join('') == 'texttext', r.value);
+        assert(r.rest == ' and etc.');
+    });
+});
+
 describe('charXXX', function(){
     it('charExcept not null',function(){
         var parse = charExcept("");

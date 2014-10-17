@@ -96,7 +96,15 @@ var tuco  = (function(){
         if(arguments.length < 2)
             throw 'all accepts at least two parsers';
 
+        return __all.apply(null, arguments);
+    }
+
+    function __all(){
         var parsers = Array.prototype.slice.call(arguments);
+
+        if(parsers.length == 1) {
+            return parsers[0];
+        }
 
         return function _all(rest){
             var results = [];
@@ -180,8 +188,10 @@ var tuco  = (function(){
     }
 
     function optional(parser){
-        if(arguments.length != 1)
-            throw 'optional accepts parser';
+        if(arguments.length == 0)
+            throw 'optional accepts parsers';
+
+        parser = __all.apply(null, arguments);
 
         return function _optional(rest){
             var result = parser(rest);
