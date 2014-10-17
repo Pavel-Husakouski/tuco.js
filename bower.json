@@ -1,7 +1,7 @@
 {
   "name": "tuco.js",
-  "main": "tuco.js",
   "version": "0.0.1",
+  "main": "tuco.js",
   "homepage": "https://github.com/Hollander/tuco.js",
   "authors": [
     "Pavel Husakouski <phusakouski@gmail.com>"
