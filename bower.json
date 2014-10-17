@@ -1,0 +1,26 @@
+{
+  "name": "tuco.js",
+  "main": "tuco.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/Hollander/tuco.js",
+  "authors": [
+    "Pavel Husakouski <phusakouski@gmail.com>"
+  ],
+  "description": "Minimalist library to use with simple query grammars, built on parser combinators.",
+  "keywords": [
+    "query",
+    "expression",
+    "grammar",
+    "parser",
+    "combinators"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "dist",
+    "tests"
+  ]
+}
