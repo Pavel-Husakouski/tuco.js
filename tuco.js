@@ -26,32 +26,33 @@ var tuco  = (function(){
             if(nsImport == 'nsImport')
                 continue;
 
-            output += 'var ' + item + ' = '+name+ '.'+item + ';';
+            output += 'var ' + item + ' = ' +name+ '.' +item + ';';
         }
 
         return output;
     };
 
-    Function.prototype.map = function(projection)
-    {
-        if(arguments.length != 1)
-            throw 'map accepts projection function';
+    Function.prototype.map = function(projection) {
+        __expect(__isFunction(projection), '`map` accepts projection function');
 
         var parser = this;
 
         return function _map(rest) {
             var result = parser(rest);
 
-            return result == null ? null : { 
-                value:projection(result.value), 
-                rest:result.rest
-            };
-        }
+            return result == null ? null : { value:projection(result.value), rest:result.rest };
+        };
     };
 
+    function __expect(checkResult, msg){
+        if(checkResult)
+            return;
+
+        throw new Error(msg);
+    }
+
     function charExcept(chars){
-        if(arguments.length != 1)
-            throw 'charExcept accepts string';
+        __expect(__isString(chars), '`charExcept` accepts string');
 
         return charMeets(function(ch) {
             return chars.indexOf(ch) < 0;
@@ -59,8 +60,7 @@ var tuco  = (function(){
     }
 
     function charOneOf(chars){
-        if(arguments.length != 1)
-            throw 'charOneOf accepts string';
+        __expect(__isString(chars), '`charOneOf` accepts string');
 
         return charMeets(function(ch) {
             return chars.indexOf(ch) > -1;
@@ -68,8 +68,7 @@ var tuco  = (function(){
     }
 
     function charIs(chr){
-        if(arguments.length != 1)
-            throw 'char accepts single character';
+        __expect(__isChar(chr), '`charIs` accepts single character');
 
         return charMeets(function(ch) {
             return ch == chr[0];
@@ -77,8 +76,7 @@ var tuco  = (function(){
     }
 
     function charMeets(predicate){
-        if(arguments.length != 1)
-            throw 'charMeet accepts predicate';
+        __expect(__isFunction(predicate), '`charMeets` accepts predicate');
 
         return function _charMeets(rest){
             var result = __anyChar(rest);
@@ -96,14 +94,17 @@ var tuco  = (function(){
     }
 
     function __anyChar(rest){
-        return (!rest || rest.length == 0) ? null : {value:rest.slice(0,1), rest:rest.slice(1)};
+        return (!rest || rest.length == 0) ? null : { value:rest.slice(0,1), rest:rest.slice(1) };
     }
 
     function all(){
-        if(arguments.length < 2)
-            throw 'all accepts at least two parsers';
+        __expect(__isCombinator.apply(null, __toArray(arguments)) && arguments.length >= 2, '`all` accepts at least two combinators');
 
         return __all.apply(null, arguments);
+    }
+
+    function __isChar(arg){
+        return typeof(arg) == "string" && arg.length == 1;
     }
 
     function __isString(arg){
@@ -112,6 +113,18 @@ var tuco  = (function(){
 
     function __isFunction(arg){
         return typeof(arg) == "function";
+    }
+
+    function __isCombinator() {
+        var args = __toArray(arguments);
+
+        return args.every(function(arg){
+            return __isFunction(arg) || __isString(arg);
+        });
+    }
+
+    function __toArray(args){
+        return Array.prototype.slice.call(args);
     }
 
     function __isArray(arg){
@@ -135,11 +148,10 @@ var tuco  = (function(){
     }
 
     function __all(){
-        var parsers = __builtin(Array.prototype.slice.call(arguments));
+        var parsers = __builtin(__toArray(arguments));
 
-        if(parsers.length == 1) {
+        if(parsers.length == 1)
             return parsers[0];
-        }
 
         return function _all(rest){
             var results = [];
@@ -153,13 +165,12 @@ var tuco  = (function(){
                 rest = result.rest;
             }
 
-            return {value:results, rest:result.rest};
+            return { value:results, rest:result.rest };
         }
     }
 
     function first(first, second){
-        if(arguments.length != 2)
-            throw 'first accepts two parsers';
+        __expect(__isCombinator(first, second), '`first` accepts two combinators');
 
         var parser = __all(first, second);
 
@@ -171,8 +182,7 @@ var tuco  = (function(){
     }
 
     function second(first, second){
-        if(arguments.length != 2)
-            throw 'second accepts two parsers';
+        __expect(__isCombinator(first, second), '`second` accepts two combinators');
 
         var parser = __all(first, second);
 
@@ -184,8 +194,7 @@ var tuco  = (function(){
     }
 
     function between(first, second, third){
-        if(arguments.length != 3)
-            throw 'between accepts three parsers';
+        __expect(__isCombinator(first, second, third), '`between` accepts three combinators');
 
         var parser = __all(first, second, third);
 
@@ -197,8 +206,7 @@ var tuco  = (function(){
     }
 
     function word(text){
-        if(!__isString(text))
-            throw 'word accepts non-empty string';
+        __expect(__isString(text), '`word` accepts non-empty string');
 
         if(text.length == 1)
             return charIs(text);
@@ -212,9 +220,8 @@ var tuco  = (function(){
         }
     }
 
-    function rep1(){
-        if(arguments.length == 0)
-            throw 'rep1 accepts parsers';
+    function rep1() {
+        __expect(__isCombinator.apply(null, __toArray(arguments)), '`rep1` accepts at least one combinator');
 
         var parser = __all.apply(null, arguments);
 
@@ -234,15 +241,13 @@ var tuco  = (function(){
     }
 
     function rep0(){
-        if(arguments.length == 0)
-            throw 'rep0 accepts parser';
+        __expect(__isCombinator.apply(null, __toArray(arguments)), '`rep0` accepts at least one combinator');
 
         return optional(rep1.apply(null, arguments));
     }
 
     function optional(){
-        if(arguments.length == 0)
-            throw 'optional accepts parsers';
+        __expect(__isCombinator.apply(null, __toArray(arguments)), '`optional` accepts at least one combinator');
 
         var parser = __all.apply(null, arguments);
 
@@ -254,10 +259,9 @@ var tuco  = (function(){
     }
 
     function or(){
-        if(arguments.length < 2)
-            throw 'or accepts at least two parsers';
+        __expect(__isCombinator.apply(null, __toArray(arguments)) && arguments.length >= 2, '`or` accepts at least two combinators');
 
-        var parsers = __builtin(Array.prototype.slice.call(arguments));
+        var parsers = __builtin(__toArray(arguments));
 
         return function _or(rest){
             for(var i in parsers){
