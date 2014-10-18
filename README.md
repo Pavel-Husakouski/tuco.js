@@ -15,9 +15,9 @@ Look at the test/demo*.js for more details
 Development
 -----------
 
-npm install -g gulp
-npm install
-gulp build
+* npm install -g gulp
+* npm install
+* gulp build
 
 Priorities
 ----------
