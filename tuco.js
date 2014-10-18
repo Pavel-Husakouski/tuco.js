@@ -98,9 +98,11 @@ var tuco  = (function(){
     }
 
     function all(){
-        __expect(__isCombinator.apply(null, __toArray(arguments)) && arguments.length >= 2, '`all` accepts at least two combinators');
+        var args = __toArray(arguments);
 
-        return __all.apply(null, arguments);
+        __expect(__areCombinators(args) && args.length >= 2, '`all` accepts at least two combinators');
+
+        return __all(args);
     }
 
     function __isChar(arg){
@@ -115,10 +117,8 @@ var tuco  = (function(){
         return typeof(arg) == "function";
     }
 
-    function __isCombinator() {
-        var args = __toArray(arguments);
-
-        return args.every(function(arg){
+    function __areCombinators(array) {
+        return array.every(function(arg){
             return __isFunction(arg) || __isString(arg);
         });
     }
@@ -147,8 +147,8 @@ var tuco  = (function(){
         return parsers;
     }
 
-    function __all(){
-        var parsers = __builtin(__toArray(arguments));
+    function __all(combinators, indexToTake){
+        var parsers = __builtin(combinators);
 
         if(parsers.length == 1)
             return parsers[0];
@@ -165,32 +165,26 @@ var tuco  = (function(){
                 rest = result.rest;
             }
 
-            return { value:results, rest:result.rest };
+            return { value: indexToTake == null ? results : results[indexToTake], rest:result.rest };
         }
     }
 
     function first(first, second){
-        __expect(__isCombinator(first, second), '`first` accepts two combinators');
+        __expect(__areCombinators([first, second]), '`first` accepts two combinators');
 
-        return __all(first, second).map(function(value){
-            return value[0];
-        });
+        return __all([first, second], 0);
     }
 
     function second(first, second){
-        __expect(__isCombinator(first, second), '`second` accepts two combinators');
+        __expect(__areCombinators([first, second]), '`second` accepts two combinators');
 
-        return __all(first, second).map(function(value){
-            return value[1];
-        });
+        return __all([first, second], 1);
     }
 
     function between(first, second, third){
-        __expect(__isCombinator(first, second, third), '`between` accepts three combinators');
+        __expect(__areCombinators([first, second, third]), '`between` accepts three combinators');
 
-        return __all(first, second, third).map(function(value){
-            return value[1];
-        });
+        return __all([first, second, third], 1);
     }
 
     function word(text){
@@ -199,15 +193,17 @@ var tuco  = (function(){
         if(text.length == 1)
             return charIs(text);
 
-        return __all.apply(null, text.split('')).map(function(value){
+        return __all(text.split('')).map(function(value){
             return text;
         });
     }
 
     function rep1() {
-        __expect(__isCombinator.apply(null, __toArray(arguments)), '`rep1` accepts at least one combinator');
+        var args = __toArray(arguments);
 
-        var parser = __all.apply(null, arguments);
+        __expect(__areCombinators(args), '`rep1` accepts at least one combinator');
+
+        var parser = __all(args);
 
         return function _rep1(rest){
             var result1 = parser(rest);
@@ -225,15 +221,19 @@ var tuco  = (function(){
     }
 
     function rep0(){
-        __expect(__isCombinator.apply(null, __toArray(arguments)), '`rep0` accepts at least one combinator');
+        var args = __toArray(arguments);
 
-        return optional(rep1.apply(null, arguments));
+        __expect(__areCombinators(args), '`rep0` accepts at least one combinator');
+
+        return optional(rep1.apply(null, args));
     }
 
     function optional(){
-        __expect(__isCombinator.apply(null, __toArray(arguments)), '`optional` accepts at least one combinator');
+        var args = __toArray(arguments);
 
-        var parser = __all.apply(null, arguments);
+        __expect(__areCombinators(args), '`optional` accepts at least one combinator');
+
+        var parser = __all(args);
 
         return function _optional(rest){
             var result = parser(rest);
@@ -243,9 +243,11 @@ var tuco  = (function(){
     }
 
     function or(){
-        __expect(__isCombinator.apply(null, __toArray(arguments)) && arguments.length >= 2, '`or` accepts at least two combinators');
+        var args = __toArray(arguments);
 
-        var parsers = __builtin(__toArray(arguments));
+        __expect(__areCombinators(args) && args.length >= 2, '`or` accepts at least two combinators');
+
+        var parsers = __builtin(args);
 
         return function _or(rest){
             for(var i in parsers){
