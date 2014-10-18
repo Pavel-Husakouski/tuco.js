@@ -1,5 +1,7 @@
 In memories of Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Wallach
 
+![alt text](/eli_wallach.jpg "Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Wallach")
+
 tuco.js
 =======
 
@@ -20,7 +22,7 @@ gulp build
 Priorities
 ----------
 
-Quality
-Very minimum set of features
-Easy to read, easy to understand, easy to use
-Up to 300 lines of code
+* Quality
+* Very minimum set of features
+* Easy to read, easy to understand, easy to use
+* Up to 300 lines of code
