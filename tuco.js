@@ -161,9 +161,11 @@ var tuco  = (function(){
         }
     }
 
-    function rep1(parser){
-        if(arguments.length != 1)
-            throw 'rep1 accepts parser';
+    function rep1(){
+        if(arguments.length == 0)
+            throw 'rep1 accepts parsers';
+
+        var parser = __all.apply(null, arguments);
 
         return function _rep1(rest){
             var result1 = parser(rest);
@@ -180,18 +182,18 @@ var tuco  = (function(){
         }
     }
 
-    function rep0(parser){
-        if(arguments.length != 1)
+    function rep0(){
+        if(arguments.length == 0)
             throw 'rep0 accepts parser';
 
-        return optional(rep1(parser));
+        return optional(rep1.apply(null, arguments));
     }
 
-    function optional(parser){
+    function optional(){
         if(arguments.length == 0)
             throw 'optional accepts parsers';
 
-        parser = __all.apply(null, arguments);
+        var parser = __all.apply(null, arguments);
 
         return function _optional(rest){
             var result = parser(rest);

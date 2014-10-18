@@ -13,15 +13,15 @@ eval(tuco.nsImport('tuco'));
 describe('numbers', function() {
     it('numbers not null', function(){
         // digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
-        var digit = or(charIs('0'),charIs('1'),charIs('2'));
+        var digit = charOneOf("0123456789");
         // natNumber = digit{digit}
         var natNumber = rep1(digit).map(toString);
         // ["+"|"-"]
-        var sign = optional(or(charIs('+'),charIs('-')));
+        var sign = optional(charOneOf('+-'));
         // ["."[natNumber]]
         var fraction = optional(all(charIs('.'), natNumber)).map(toString);
         // [("e"|"E")["+"|"-"]natNumber]
-        var exp = optional(all(or(charIs('e'),charIs('E')), sign, natNumber)).map(toString);
+        var exp = optional(all(charOneOf('eE'), sign, natNumber)).map(toString);
         // ["+"|"-"]natNumber["."[natNumber]][("e"|"E")["+"|"-"]natNumber]
         var number = all(sign, natNumber, fraction, exp).map(toString);
         

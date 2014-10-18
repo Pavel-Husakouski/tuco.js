@@ -114,7 +114,44 @@ describe('repetition', function(){
         assert(r != null);
         assert(r.value.length == 1);
         assert(r.rest == 'zzz');
-    })
+    });
+
+    it('rep1 implicit `all` result null when no match', function(){
+        var parse = rep1(word('text'), word('text'));
+        var r = parse('text and etc.');
+        
+        assert(r == null, r);
+    });
+
+    it('rep1 implicit `all` value not null when match', function(){
+        var parse = rep1(word('text1'), word('text2'));
+        var r = parse('text1text2text1text2text1 and etc.');
+        
+        assert.deepEqual(r, {
+            value:[["text1","text2"],["text1","text2"]],
+            rest:"text1 and etc."
+        });
+    });
+
+    it('rep0 implicit `all` value null when no match', function(){
+        var parse = rep0(word('text1'), word('text2'));
+        var r = parse('text1text and etc.');
+        
+        assert.deepEqual(r, {
+            value:null,
+            rest:"text1text and etc."
+        });
+    });
+
+    it('rep0 implicit `all` value not null when match', function(){
+        var parse = rep0(word('text1'), word('text2'));
+        var r = parse('text1text2text1text2text1 and etc.');
+        
+        assert.deepEqual(r, {
+            value:[["text1","text2"],["text1","text2"]],
+            rest:"text1 and etc."
+        });
+    });
 });
 
 
@@ -136,10 +173,8 @@ describe ('option',function(){
         assert(r.value == null);
         assert(r.rest == 'xxx text and etc.');
     })
-});
 
-describe('optional implicit `all` for the arguments', function(){
-    it('value null when no match', function(){
+    it('implicit `all` value null when no match', function(){
         var parse = optional(word('text'), word('text'));
         var r = parse('text and etc.');
         
@@ -148,7 +183,7 @@ describe('optional implicit `all` for the arguments', function(){
         assert(r.rest == 'text and etc.');
     });
 
-    it('value not null when match', function(){
+    it('implicit `all` value not null when match', function(){
         var parse = optional(word('text'), word('text'));
         var r = parse('texttext and etc.');
         

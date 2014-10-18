@@ -3,7 +3,11 @@ var tuco = require('../tuco');
 
 eval(tuco.nsImport('tuco'));
 
-var toString = function(x){ return x.join(''); };
+var toString = function(x){ 
+    if(x == null || typeof x == 'string')
+        return x;
+    return x.join(''); 
+};
 
 function check(parse, input, value, rest){
         value = value || input;
@@ -11,34 +15,31 @@ function check(parse, input, value, rest){
 
         var r = parse(input);
 
-        var conditions = [ {test:r != null, msg:"result not null"},
-          {test:r.value == value, msg:"expected value:" + JSON.stringify(value) + " actual value:"+JSON.stringify(r.value)},
-         {test:r.rest == rest, msg:"expected rest:" + JSON.stringify(rest) + " actual rest:"+JSON.stringify(r.rest)}]
-         
-        assert(conditions.every(function(x) { return x.test;}), JSON.stringify(conditions, null,2)); 
+        assert.deepEqual(r, {
+            value: value,
+            rest:rest
+        }); 
 }
 
 describe('recursive', function() {
 
 /*
-    S = (S)S | (S) | ()S | ()
+    S = '(', [S], ')', [S]
 */
 
     it('', function(){
  
-        var parse = null;
-        var s = function (x) { return  parse(x); };
+        var sImpl = null;
+        var s = function (x) { return  sImpl(x); };
         
-        var s1 = all(charIs('('), s , charIs(')'));
+        var sImpl = all(charIs('('), optional(s).map(toString) , charIs(')'), optional(s).map(toString)).map(toString);
         
-        parse = or(all(s1.map(toString), s).map(toString) , s1.map(toString), all(word('()'),s).map(toString), word('()'));
-
-        check(parse, '()');
-        check(parse, '()()');
-        check(parse, '(())');
-        check(parse, '()()()()');
-        check(parse, '((())(()))(())()');
-        check(parse, '(((())(()))((())(())))');
-        check(parse, '()((((())(()))((())(())))(((())(()))((())(()))))');
+        check(s, '()' );
+        check(s, '()()');
+        check(s, '(())');
+        check(s, '()()()()');
+        check(s, '((())(()))(())()');
+        check(s, '(((())(()))((())(())))');
+        check(s, '()((((())(()))((())(())))(((())(()))((())(()))))');
     });
 });
