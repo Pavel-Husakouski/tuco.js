@@ -311,12 +311,13 @@ describe('all', function(){
     });
 
     it('word not null',function(){
-        var parse = word('t');
-        var r = parse('t and etc.');
+        var parse = word('test');
+        var r = parse('test and etc.');
         
-        assert(r != null);
-        assert(r.value == 't');
-        assert(r.rest == ' and etc.');
+        assert.deepEqual(r,{
+            value:'test',
+            rest:' and etc.'
+        });
     });
 
     it('word null',function(){

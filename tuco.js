@@ -71,7 +71,7 @@ var tuco  = (function(){
         __expect(__isChar(chr), '`charIs` accepts single character');
 
         return charMeets(function(ch) {
-            return ch == chr[0];
+            return ch == chr;
         });
     }
 
@@ -172,37 +172,25 @@ var tuco  = (function(){
     function first(first, second){
         __expect(__isCombinator(first, second), '`first` accepts two combinators');
 
-        var parser = __all(first, second);
-
-        return function _second(rest){
-            var result = parser(rest);
-
-            return result == null ? null : { value:result.value[0], rest:result.rest };
-        }
+        return __all(first, second).map(function(value){
+            return value[0];
+        });
     }
 
     function second(first, second){
         __expect(__isCombinator(first, second), '`second` accepts two combinators');
 
-        var parser = __all(first, second);
-
-        return function _second(rest){
-            var result = parser(rest);
-
-            return result == null ? null : { value:result.value[1], rest:result.rest };
-        }
+        return __all(first, second).map(function(value){
+            return value[1];
+        });
     }
 
     function between(first, second, third){
         __expect(__isCombinator(first, second, third), '`between` accepts three combinators');
 
-        var parser = __all(first, second, third);
-
-        return function _between(rest){
-            var result = parser(rest);
-
-            return result == null ? null : {value:result.value[1], rest:result.rest};
-        }
+        return __all(first, second, third).map(function(value){
+            return value[1];
+        });
     }
 
     function word(text){
@@ -211,13 +199,9 @@ var tuco  = (function(){
         if(text.length == 1)
             return charIs(text);
 
-        var parser = __all.apply(null, text.split(''));
-
-        return function _word(rest){
-            var result = parser(rest);
-
-            return result == null ? null : {value:text, rest:result.rest};
-        }
+        return __all.apply(null, text.split('')).map(function(value){
+            return text;
+        });
     }
 
     function rep1() {
