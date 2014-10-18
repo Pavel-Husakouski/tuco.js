@@ -27,9 +27,10 @@ describe('numbers', function() {
         
         var result = number('-012.12E-10zzzzz');
         
-        assert(result != null);
-        assert(result.value == '-012.12E-10');
-        assert(result.rest == 'zzzzz');
+        assert.deepEqual(result,{
+            value:'-012.12E-10',
+            rest:'zzzzz'
+        });
     })
         
 });

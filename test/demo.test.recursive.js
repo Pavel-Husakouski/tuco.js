@@ -3,7 +3,7 @@ var tuco = require('../tuco');
 
 eval(tuco.nsImport('tuco'));
 
-var toString = function(x){ 
+function toString(x){ 
     if(x == null || typeof x == 'string')
         return x;
     return x.join(''); 
@@ -20,16 +20,10 @@ function check(parse, input, value, rest){
 
 describe('recursive', function() {
 
-/*
-    S = '(', [S], ')', [S]
-*/
-
-    it('', function(){
- 
-        var sImpl = null;
-        var s = function (x) { return  sImpl(x); };
-        
+    it("S = '(', [S], ')', [S]", function(){
         var sImpl = all(charIs('('), optional(s).map(toString) , charIs(')'), optional(s).map(toString)).map(toString);
+
+        function s(x) { return  sImpl(x); };
         
         check(s, '()' );
         check(s, '()()');
