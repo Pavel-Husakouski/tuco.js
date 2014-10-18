@@ -28,6 +28,16 @@ describe('map', function() {
 });
 
 describe('alternation',function(){
+    it('or implicit `word`', function(){
+        var parse = or('first', 'second', 'third');
+        var r = parse('firstsecondthird');
+        
+        assert.deepEqual(r,{
+            value:'first',
+            rest: 'secondthird'
+        });
+    });
+
     it('or first not null', function(){
         var parse = or(word('first'), word('second'), word('third'));
         var r = parse('firstsecondthird');
@@ -143,8 +153,28 @@ describe('repetition', function(){
         });
     });
 
+    it('rep0 implicit `word` value null when no match', function(){
+        var parse = rep0('text1', 'text2');
+        var r = parse('text1text and etc.');
+        
+        assert.deepEqual(r, {
+            value:null,
+            rest:"text1text and etc."
+        });
+    });
+
     it('rep0 implicit `all` value not null when match', function(){
         var parse = rep0(word('text1'), word('text2'));
+        var r = parse('text1text2text1text2text1 and etc.');
+        
+        assert.deepEqual(r, {
+            value:[["text1","text2"],["text1","text2"]],
+            rest:"text1 and etc."
+        });
+    });
+
+    it('rep0 implicit `word`', function(){
+        var parse = rep0('text1', 'text2');
         var r = parse('text1text2text1text2text1 and etc.');
         
         assert.deepEqual(r, {
@@ -156,6 +186,16 @@ describe('repetition', function(){
 
 
 describe ('option',function(){
+    it('optional implicit `word`', function(){
+        var parse = optional('text');
+        var r = parse('text and etc.');
+        
+        assert.deepEqual(r,{
+            value:'text',
+            rest:' and etc.'
+        });
+    });
+
     it('optional not null', function(){
         var parse = optional(word('text'));
         var r = parse('text and etc.');
@@ -251,12 +291,31 @@ describe('charXXX', function(){
 });
 
 describe('all', function(){
+    it('implicit `word`',function(){
+        var parse = all('x','yy','x');
+        var r = parse('xyyx and etc.');
+        
+        assert.deepEqual(r, {
+            value: ['x','yy', 'x'],
+            rest: ' and etc.'
+        });
+    });
+
     it('word not null',function(){
         var parse = word('text');
         var r = parse('text and etc.');
         
         assert(r != null);
         assert(r.value == 'text');
+        assert(r.rest == ' and etc.');
+    });
+
+    it('word not null',function(){
+        var parse = word('t');
+        var r = parse('t and etc.');
+        
+        assert(r != null);
+        assert(r.value == 't');
         assert(r.rest == ' and etc.');
     });
 
@@ -283,6 +342,17 @@ describe('all', function(){
         assert(r == null);
     });
 
+    it('between implicit `word`',function(){
+        var parse = between('(', 'xyz', ')');
+        var r = parse('(xyz)xxx');
+        
+        assert.deepEqual(r, {
+            value:'xyz',
+            rest:'xxx'
+        });
+    });
+
+
     it('second not null',function(){
         var parse = second(charIs('\\'), charOneOf('xyz'));
         var r = parse('\\xxxx');
@@ -297,6 +367,16 @@ describe('all', function(){
         var r = parse('/xxxx');
         
         assert(r == null);
+    });
+
+    it('second implicit `word`',function(){
+        var parse = second('\\','xyz');
+        var r = parse('\\xyzxxx');
+        
+        assert.deepEqual(r, {
+            value:'xyz',
+            rest:'xxx'
+        });
     });
     
     it('all not null',function(){

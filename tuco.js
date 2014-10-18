@@ -99,8 +99,36 @@ var tuco  = (function(){
         return __all.apply(null, arguments);
     }
 
+    function __isString(arg){
+        return typeof(arg) == "string";
+    }
+
+    function __isFunction(arg){
+        return typeof(arg) == "function";
+    }
+
+    function __isArray(arg){
+        return Object.prototype.toString.call(arg) == '[object Array]';
+    }
+
+    function __builtin(parsers){
+        if(__isString(parsers)) 
+            return word(parsers);
+
+        if(__isArray(parsers)) {
+            return parsers.map(function(parser){
+                if(__isString(parser)) 
+                    return word(parser);
+
+                return parser;
+            });
+        }
+        
+        return parsers;
+    }
+
     function __all(){
-        var parsers = Array.prototype.slice.call(arguments);
+        var parsers = __builtin(Array.prototype.slice.call(arguments));
 
         if(parsers.length == 1) {
             return parsers[0];
@@ -126,6 +154,9 @@ var tuco  = (function(){
         if(arguments.length != 2)
             throw 'second accepts two parsers';
 
+        first = __builtin(first);
+        second = __builtin(second);
+
         return function _second(rest){
             var parser = all(first, second);
             var result = parser(rest);
@@ -138,6 +169,11 @@ var tuco  = (function(){
         if(arguments.length != 3)
             throw 'between accepts three parsers';
 
+        first = __builtin(first);
+        second = __builtin(second);
+        third = __builtin(third);
+
+
         return function _between(rest){
             var parser = all(first, second, third);
             var result = parser(rest);
@@ -149,6 +185,9 @@ var tuco  = (function(){
     function word(text){
         if(!text)
             throw 'word accepts non-empty string';
+
+        if(text.length == 1)
+            return charIs(text);
 
         return function _word(rest){
             var parsers = text.split('').map(function(ch) {
@@ -206,7 +245,7 @@ var tuco  = (function(){
         if(arguments.length < 2)
             throw 'or accepts at least two parsers';
 
-        var parsers = Array.prototype.slice.call(arguments);
+        var parsers = __builtin(Array.prototype.slice.call(arguments));
 
         return function _or(rest){
             for(var i in parsers){

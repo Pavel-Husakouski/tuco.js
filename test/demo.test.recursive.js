@@ -10,15 +10,12 @@ var toString = function(x){
 };
 
 function check(parse, input, value, rest){
-        value = value || input;
-        rest = rest || '';
+    var r = parse(input);
 
-        var r = parse(input);
-
-        assert.deepEqual(r, {
-            value: value,
-            rest:rest
-        }); 
+    assert.deepEqual(r, {
+        value: value || input,
+        rest: rest || ''
+    }); 
 }
 
 describe('recursive', function() {
