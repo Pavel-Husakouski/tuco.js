@@ -352,8 +352,35 @@ describe('all', function(){
         });
     });
 
+    it('first not null when match',function(){
+        var parse = first(charOneOf('xyz'), charIs('/'));
+        var r = parse('x/rest');
+        
+        assert.deepEqual(r,{
+            value:'x',
+            rest:'rest'
+        });
+    });
 
-    it('second not null',function(){
+    it('first is null when no match',function(){
+        var parse = first(charOneOf('xyz'), charIs('/'));
+        var r = parse('k\\rest');
+        
+        assert(r == null);
+    });
+
+    it('second implicit `word`',function(){
+        var parse = first('xyz', '/');
+        var r = parse('xyz/rest');
+        
+        assert.deepEqual(r,{
+            value:'xyz',
+            rest:'rest'
+        });
+    });
+
+
+    it('second not null when match',function(){
         var parse = second(charIs('\\'), charOneOf('xyz'));
         var r = parse('\\xxxx');
         
@@ -362,7 +389,7 @@ describe('all', function(){
         assert(r.rest == 'xxx');
     });
 
-    it('second null',function(){
+    it('second is null when no match',function(){
         var parse = second(charIs('\\'), charOneOf('xyz'));
         var r = parse('/xxxx');
         
@@ -379,17 +406,14 @@ describe('all', function(){
         });
     });
     
-    it('all not null',function(){
+    it('all not null when match',function(){
         var parse = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
         var r = parse('xyz1rest');
         
-        assert(r != null);
-        assert.equal(4, r.value.length);
-        assert(r.rest == 'rest');
-        assert(r.value[0] == 'x');
-        assert(r.value[1] == 'y');
-        assert(r.value[2] == 'z');
-        assert(r.value[3] == '1');
+        assert(r,{
+            value:['x','y','z','1'],
+            rest:'rest'
+        });
     });
 
     it('all first null',function(){
@@ -429,15 +453,7 @@ describe('all', function(){
 });
 
 describe('anyChar', function(){
-    it('parser should be not null', function(){
-        assert(null != anyChar());
-    });
-
-    it('123 should return not null', function(){
-        assert(null != anyChar()('123'));
-    });
-
-    it('123 should return value and rest', function(){
+    it('value and rest are not when match', function(){
         var result = anyChar()('123');
         
         assert(result.value == '1' && result.rest == '23' );

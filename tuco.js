@@ -13,6 +13,7 @@ var tuco  = (function(){
         or:or,
         rep0:rep0,
         rep1:rep1,
+        first:first,
         second:second,
         word:word,
         nsImport:nsImport
@@ -150,15 +151,26 @@ var tuco  = (function(){
         }
     }
 
+    function first(first, second){
+        if(arguments.length != 2)
+            throw 'first accepts two parsers';
+
+        var parser = __all(first, second);
+
+        return function _second(rest){
+            var result = parser(rest);
+
+            return result == null ? null : { value:result.value[0], rest:result.rest };
+        }
+    }
+
     function second(first, second){
         if(arguments.length != 2)
             throw 'second accepts two parsers';
 
-        first = __builtin(first);
-        second = __builtin(second);
+        var parser = __all(first, second);
 
         return function _second(rest){
-            var parser = all(first, second);
             var result = parser(rest);
 
             return result == null ? null : { value:result.value[1], rest:result.rest };
@@ -169,13 +181,9 @@ var tuco  = (function(){
         if(arguments.length != 3)
             throw 'between accepts three parsers';
 
-        first = __builtin(first);
-        second = __builtin(second);
-        third = __builtin(third);
-
+        var parser = __all(first, second, third);
 
         return function _between(rest){
-            var parser = all(first, second, third);
             var result = parser(rest);
 
             return result == null ? null : {value:result.value[1], rest:result.rest};
@@ -183,17 +191,15 @@ var tuco  = (function(){
     }
 
     function word(text){
-        if(!text)
+        if(!__isString(text))
             throw 'word accepts non-empty string';
 
         if(text.length == 1)
             return charIs(text);
 
+        var parser = __all.apply(null, text.split(''));
+
         return function _word(rest){
-            var parsers = text.split('').map(function(ch) {
-                return charIs(ch);
-            });
-            var parser = all.apply(null, parsers);
             var result = parser(rest);
 
             return result == null ? null : {value:text, rest:result.rest};
