@@ -23,6 +23,9 @@ var tuco  = (function(){
         var output='';
 
         for(var item in tuco){
+            if(nsImport == 'nsImport')
+                continue;
+
             output += 'var ' + item + ' = '+name+ '.'+item + ';';
         }
 
@@ -32,14 +35,17 @@ var tuco  = (function(){
     Function.prototype.map = function(projection)
     {
         if(arguments.length != 1)
-            throw 'map accepts string';
+            throw 'map accepts projection function';
 
         var parser = this;
 
         return function _map(rest) {
             var result = parser(rest);
 
-            return result == null ? null : {value:projection(result.value), rest:result.rest};
+            return result == null ? null : { 
+                value:projection(result.value), 
+                rest:result.rest
+            };
         }
     };
 
