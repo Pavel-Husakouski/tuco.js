@@ -1,3 +1,5 @@
+In memories of Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Wallach
+
 tuco.js
 =======
 
@@ -15,4 +17,10 @@ npm install -g gulp
 npm install
 gulp build
 
-In memories of Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Wallach
+Priorities
+----------
+
+Quality
+Very minimum set of features
+Easy to read, easy to understand, easy to use
+Up to 300 lines of code
