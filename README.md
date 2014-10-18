@@ -1,6 +1,6 @@
 In memories of Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Wallach
 
-![alt text](/eli_wallach.jpg "Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Wallach")
+![alt text](/img/eli_wallach.jpg?raw=true "Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Wallach")
 
 tuco.js
 =======
