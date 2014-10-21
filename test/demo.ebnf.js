@@ -17,13 +17,13 @@ terminal = "'" , character , { character } , "'"
  
 lhs = identifier ;
 
-rhs = identifier
-     | terminal
+rhs = identifier , [ rightmost ]
+     | terminal  , [ rightmost ]
      | "[" , rhs , "]" , [ rightmost ]
      | "{" , rhs , "}" , [ rightmost ] 
      | "(" , rhs , ")" , [ rightmost ];
 
-rightmost = "|" , rhs | "," , rhs ;
+rightmost = ("|" , ",") , rhs ;
  
 rule = lhs , "=" , rhs , ";" ;
 grammar = { rule } ;

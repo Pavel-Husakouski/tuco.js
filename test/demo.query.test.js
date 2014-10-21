@@ -18,6 +18,8 @@ var tuco = require('../tuco');
 
 eval(tuco.nsImport('tuco'));
 
+var opt = optional;
+
 function toString(x){ 
 	if(x == null || typeof x == 'string')
 		return x;
@@ -77,7 +79,7 @@ var verbatim 	= between('"', rep0(charExcept('"')), '"').map(toVerbatim);
 var shaped 		= or(between('(', query, ')'), verbatim);
 var op0 		= optional(first(or('AND', 'OR'), optional(space))).map(toOperator); 
 var op1 		= optional(first(or('AND', 'OR'), space)).map(toOperator); 
-var logicRest 	= second(space, optional(or( all(op0, shapedLogic), all(op1, logic) ))).map(toRightArg);
+var logicRest 	= second(space, opt(or( all(op0, shapedLogic), all(op1, logic) ))).map(toRightArg);
 var shapedLogicImpl = all(shaped, optional(logicRest)).map(toLeftArg);
 var logicImpl   = all(singleWord, optional(logicRest)).map(toLeftArg);
 var queryImpl 	= between(optional(space), optional(or(shapedLogic, logic)), optional(space));
@@ -87,5 +89,144 @@ describe('query', function() {
 		var result = query('bamboo OR (join AND ")quted test laenin,()!" bbq) AND "" OR ncx AND pgt');
 		
 		assert(result.rest == "");
+   	});
+
+
+   	it("simple", function(){
+		var result = query('x');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'word',
+				value:'x'
+			},
+			rest:""
+		});
+   	});
+
+   	it("simple with spaces", function(){
+		var result = query(' x ');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'word',
+				value:'x'
+			},
+			rest:""
+		});
+   	});
+
+   	it("simple quoted", function(){
+		var result = query('" x "');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'verbatim',
+				value:' x '
+			},
+			rest:""
+		});
+   	});
+
+   	it("simple parenthesed", function(){
+		var result = query(' ( x ) ');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'word',
+				value:'x'
+			},
+			rest:""
+		});
+   	});
+
+   	it("simple parenthesed no spaces", function(){
+		var result = query('(x)');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'word',
+				value:'x'
+			},
+			rest:""
+		});
+   	});
+
+   	it("operator AND", function(){
+		var result = query('x AND y');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'AND',
+				left:{
+					kind:'word',
+					value: 'x'
+				},
+				right:{
+					kind:'word',
+					value: 'y'
+				},
+			},
+			rest:""
+		});
+   	});
+
+   	it("operator OR", function(){
+		var result = query('x OR y');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'OR',
+				left:{
+					kind:'word',
+					value: 'x'
+				},
+				right:{
+					kind:'word',
+					value: 'y'
+				},
+			},
+			rest:""
+		});
+   	});
+
+   	it("implicit operator AND", function(){
+		var result = query('x  y');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'AND',
+				left:{
+					kind:'word',
+					value: 'x'
+				},
+				right:{
+					kind:'word',
+					value: 'y'
+				},
+			},
+			rest:""
+		});
+   	});
+
+   	it("empty verbatim", function(){
+		var result = query('""');
+		
+		assert.deepEqual(result,{
+			value: { 
+				kind:'verbatim',
+				value:null
+			},
+			rest:""
+		});
+   	});
+
+   	it("empty parenthesises", function(){
+		var result = query('()');
+		
+		assert.deepEqual(result,{
+			value: null,
+			rest:""
+		});
    	});
 });
