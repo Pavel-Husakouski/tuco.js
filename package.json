@@ -1,6 +1,6 @@
 {
   "name": "tuco",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Minimalist library to use with simple query grammars, built on parser combinators.",
   "repository": {
     "type": "git",
