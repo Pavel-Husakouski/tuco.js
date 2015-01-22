@@ -3,6 +3,12 @@ var tuco = require('../tuco');
 
 eval(tuco.nsImport('tuco'));
 
+describe('nsImport', function() {
+    it('should not be declared', function(){
+        assert(typeof nsImport == 'undefined');
+    });
+});
+
 describe('map', function() {
     it('map not null', function(){
         var parse = all(word('first'), word('second'), word('third'))

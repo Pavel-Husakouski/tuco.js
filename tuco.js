@@ -23,7 +23,7 @@ var tuco  = (function(){
         var output='';
 
         for(var item in tuco){
-            if(nsImport == 'nsImport')
+            if(!tuco.hasOwnProperty(item) || item == 'nsImport')
                 continue;
 
             output += 'var ' + item + ' = ' +name+ '.' +item + ';';
@@ -135,16 +135,16 @@ var tuco  = (function(){
         if(__isString(parsers)) 
             return word(parsers);
 
-        if(__isArray(parsers)) {
-            return parsers.map(function(parser){
-                if(__isString(parser)) 
-                    return word(parser);
-
-                return parser;
-            });
+        if(!__isArray(parsers)) {
+            return parsers;
         }
         
-        return parsers;
+        return parsers.map(function(parser){
+            if(__isString(parser)) 
+                return word(parser);
+
+            return parser;
+        });
     }
 
     function __all(combinators, indexToTake){
@@ -157,7 +157,7 @@ var tuco  = (function(){
             var results = [];
             var result;
 
-            for(var i in parsers){
+            for(var i = 0; i < parsers.length; i++){
                 result = parsers[i](rest);
                 if(result == null)
                     return null;
@@ -210,6 +210,7 @@ var tuco  = (function(){
 
             if(result1 == null)
                 return null;
+            
             var result0 = rep0(parser)(result1.rest);
             var value = [result1.value].concat(result0.value);
 
@@ -250,7 +251,7 @@ var tuco  = (function(){
         var parsers = __builtin(args);
 
         return function _or(rest){
-            for(var i in parsers){
+            for(var i = 0; i < parsers.length; i++){
                 var result = parsers[i](rest);
 
                 if(result != null)
