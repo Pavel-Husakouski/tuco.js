@@ -11,6 +11,7 @@
     "email": "phusakouski@gmail.com",
     "url": "http://mad-hollander.blogspot.com/"
   },
+  "main":"./tuco.js",
   "tags": [
     "query",
     "expression",
