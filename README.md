@@ -25,4 +25,4 @@ Priorities
 * Quality
 * Very minimum set of features
 * Easy to read, easy to understand, easy to use
-* Up to 300 lines of code
+* Short, compact code
