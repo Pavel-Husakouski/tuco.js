@@ -4,7 +4,7 @@
   "description": "Minimalist library to use with simple query grammars, built on parser combinators.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Hollander/tuco.js"
+    "url": "https://github.com/Pavel-Husakouski/tuco.js"
   },
   "author": {
     "name": "Pavel Husakouski",
