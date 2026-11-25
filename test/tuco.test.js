@@ -574,3 +574,21 @@ describe('errors', function(){
         assert.deepEqual(result.expected, ['"b"']);
     });
 });
+
+describe('argument validation', function(){
+    it('word rejects an empty string at construction', function(){
+        assert.throws(function(){ word(''); }, /non-empty string/);
+    });
+
+    it('rep1 requires at least one combinator', function(){
+        assert.throws(function(){ rep1(); }, /at least one combinator/);
+    });
+
+    it('rep0 requires at least one combinator', function(){
+        assert.throws(function(){ rep0(); }, /at least one combinator/);
+    });
+
+    it('optional requires at least one combinator', function(){
+        assert.throws(function(){ optional(); }, /at least one combinator/);
+    });
+});

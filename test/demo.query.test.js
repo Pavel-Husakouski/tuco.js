@@ -77,6 +77,17 @@ const nonSpecial 	= rep1(charExcept(spaceConst + specialConst)).map(toString);
 const singleWord 	= all(nonSpecial, rep0( special, nonSpecial)).map(toWord);
 const verbatim 	= between('"', rep0(charExcept('"')), '"').map(toVerbatim);
 const shaped 		= or(between('(', query, ')'), verbatim);
+// Приоритет операторов держится на паре вариантов op0/op1 и порядке
+// альтернатив в logicRest (ниже). После левого операнда и разделяющего
+// пробела правый операнд распознаётся одним из двух путей:
+//
+//   op0 = [AND|OR] + необязательный пробел  ->  правый операнд shaped ('(...)' или '"..."')
+//   op1 = [AND|OR] + обязательный пробел    ->  правый операнд обычное слово
+//
+// Пробел обязателен только перед словом: '(' и '"' — однозначные разделители,
+// поэтому 'AND(' и 'AND"..."' читаются как оператор + shaped (пробел не нужен),
+// а 'AND word' требует пробела — иначе 'ANDfoo' останется одним словом.
+// Порядок альтернатив or(op0 + shapedLogic, op1 + logic) и задаёт этот приоритет.
 const op0 		= opt(first(or('AND', 'OR'), opt(space))).map(toOperator); 
 const op1 		= opt(first(or('AND', 'OR'), space)).map(toOperator); 
 const logicRest 	= second(space, opt(or( all(op0, shapedLogic), all(op1, logic) ))).map(toRightArg);
@@ -303,5 +314,11 @@ describe('build clauses', function(){
 		var result = buildClauses(query('test1 (test2 test3 AND "quoted string")').value);
 
 		assert.deepEqual(result.sort(), ['quoted string', 'test1', 'test2', 'test3']);
+	});
+
+	it('null result gives no clauses', function(){
+		var result = buildClauses(null);
+
+		assert.deepEqual(result, []);
 	});
 });
