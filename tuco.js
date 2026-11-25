@@ -35,6 +35,35 @@ var tuco  = (function(){
         return output;
     };
 
+    // Parsers are functions `rest -> { value, rest } | null`.  Internally the
+    // remaining input is a cursor `{ str, pos }`, so no substring is ever
+    // copied while parsing.  `__expose` converts the cursor back to a plain
+    // string only at the public boundary, which is O(n) once instead of O(n^2).
+
+    function __isCursor(x){
+        return x != null && typeof x === 'object' && __isString(x.str) && typeof x.pos === 'number';
+    }
+
+    function __toCursor(rest){
+        if(__isCursor(rest) || rest == null)
+            return rest;
+        return { str: rest, pos: 0 };
+    }
+
+    function __materialize(result){
+        if(result == null)
+            return null;
+        return { value: result.value, rest: result.rest.str.slice(result.rest.pos) };
+    }
+
+    function __expose(parser){
+        return function(rest){
+            if(__isCursor(rest))
+                return parser(rest);
+            return __materialize(parser(__toCursor(rest)));
+        };
+    }
+
     Function.prototype.map = function(projection) {
         __expect(__isFunction(projection), '`map` accepts projection function');
 
@@ -81,23 +110,24 @@ var tuco  = (function(){
     function charMeets(predicate){
         __expect(__isFunction(predicate), '`charMeets` accepts predicate');
 
-        return function _charMeets(rest){
-            var result = __anyChar(rest);
+        return __expose(function(cursor){
+            var result = __anyChar(cursor);
 
             if(!result || !predicate(result.value))
                 return null;
             return result;
-        }
+        });
     }
 
     function anyChar(){
-        return function _anyChar(rest){
-            return __anyChar(rest);
-        }
+        return __expose(__anyChar);
     }
 
-    function __anyChar(rest){
-        return (!rest || rest.length == 0) ? null : { value:rest.slice(0,1), rest:rest.slice(1) };
+    function __anyChar(cursor){
+        if(cursor == null || cursor.pos >= cursor.str.length)
+            return null;
+
+        return { value: cursor.str.charAt(cursor.pos), rest: { str: cursor.str, pos: cursor.pos + 1 } };
     }
 
     function all(){
@@ -105,7 +135,7 @@ var tuco  = (function(){
 
         __expect(__areCombinators(args) && args.length >= 2, '`all` accepts at least two combinators');
 
-        return __all(args);
+        return __expose(__all(args));
     }
 
     function __isChar(arg){
@@ -135,15 +165,15 @@ var tuco  = (function(){
     }
 
     function __builtin(parsers){
-        if(__isString(parsers)) 
+        if(__isString(parsers))
             return word(parsers);
 
         if(!__isArray(parsers)) {
             return parsers;
         }
-        
+
         return parsers.map(function(parser){
-            if(__isString(parser)) 
+            if(__isString(parser))
                 return word(parser);
 
             return parser;
@@ -156,9 +186,10 @@ var tuco  = (function(){
         if(parsers.length == 1)
             return parsers[0];
 
-        return function _all(rest){
+        return function(cursor){
             var results = [];
             var result;
+            var rest = cursor;
 
             for(var i = 0; i < parsers.length; i++){
                 result = parsers[i](rest);
@@ -168,26 +199,26 @@ var tuco  = (function(){
                 rest = result.rest;
             }
 
-            return { value: indexToTake == null ? results : results[indexToTake], rest:result.rest };
+            return { value: indexToTake == null ? results : results[indexToTake], rest: result.rest };
         }
     }
 
     function first(first, second){
         __expect(__areCombinators([first, second]), '`first` accepts two combinators');
 
-        return __all([first, second], 0);
+        return __expose(__all([first, second], 0));
     }
 
     function second(first, second){
         __expect(__areCombinators([first, second]), '`second` accepts two combinators');
 
-        return __all([first, second], 1);
+        return __expose(__all([first, second], 1));
     }
 
     function between(first, second, third){
         __expect(__areCombinators([first, second, third]), '`between` accepts three combinators');
 
-        return __all([first, second, third], 1);
+        return __expose(__all([first, second, third], 1));
     }
 
     function word(text){
@@ -196,25 +227,19 @@ var tuco  = (function(){
         if(text.length == 1)
             return charIs(text);
 
-        return __all(text.split('')).map(function(value){
+        return __expose(__all(text.split(''))).map(function(value){
             return text;
         });
     }
 
-    function rep1() {
-        var args = __toArray(arguments);
-
-        __expect(__areCombinators(args) && args.length >= 1, '`rep1` accepts at least one combinator');
-
-        var parser = __all(args);
-
-        return function _rep1(rest){
-            var result1 = parser(rest);
+    function __rep1(parser){
+        return function(cursor){
+            var result1 = parser(cursor);
 
             if(result1 == null)
                 return null;
-            
-            var result0 = rep0(parser)(result1.rest);
+
+            var result0 = __rep0(parser)(result1.rest);
             var value = [result1.value].concat(result0.value);
 
             if(result0.value == null)
@@ -224,12 +249,32 @@ var tuco  = (function(){
         }
     }
 
+    function rep1() {
+        var args = __toArray(arguments);
+
+        __expect(__areCombinators(args) && args.length >= 1, '`rep1` accepts at least one combinator');
+
+        return __expose(__rep1(__all(args)));
+    }
+
+    function __rep0(parser){
+        return __optional(__rep1(parser));
+    }
+
     function rep0(){
         var args = __toArray(arguments);
 
         __expect(__areCombinators(args) && args.length >= 1, '`rep0` accepts at least one combinator');
 
-        return optional(rep1.apply(null, args));
+        return __expose(__rep0(__all(args)));
+    }
+
+    function __optional(parser){
+        return function(cursor){
+            var result = parser(cursor);
+
+            return result == null ? {value:null, rest:cursor} : result;
+        }
     }
 
     function optional(){
@@ -237,25 +282,13 @@ var tuco  = (function(){
 
         __expect(__areCombinators(args) && args.length >= 1, '`optional` accepts at least one combinator');
 
-        var parser = __all(args);
-
-        return function _optional(rest){
-            var result = parser(rest);
-
-            return result == null ? {value:null, rest:rest} : result;
-        }
+        return __expose(__optional(__all(args)));
     }
 
-    function or(){
-        var args = __toArray(arguments);
-
-        __expect(__areCombinators(args) && args.length >= 2, '`or` accepts at least two combinators');
-
-        var parsers = __builtin(args);
-
-        return function _or(rest){
+    function __or(parsers){
+        return function(cursor){
             for(var i = 0; i < parsers.length; i++){
-                var result = parsers[i](rest);
+                var result = parsers[i](cursor);
 
                 if(result != null)
                     return result;
@@ -264,10 +297,21 @@ var tuco  = (function(){
         }
     }
 
+    function or(){
+        var args = __toArray(arguments);
+
+        __expect(__areCombinators(args) && args.length >= 2, '`or` accepts at least two combinators');
+
+        return __expose(__or(__builtin(args)));
+    }
+
     function chain(operand, operator){
         __expect(__areCombinators([operand, operator]), '`chain` accepts two combinators');
 
-        return all(operand, rep0(all(operator, operand)));
+        var o = __builtin(operand);
+        var p = __builtin(operator);
+
+        return __expose(__all([o, __rep0(__all([p, o]))]));
     }
 
     function __defaultApply(op, left, right){

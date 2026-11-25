@@ -19,11 +19,11 @@
   - Сейчас сьют зелёный (74 passing), но баги 1–6 тестами не покрыты.
   - Добавить: `word('')` (expect при построении), `rep1()/rep0()/optional()` без аргументов, `2-3-4` для ассоциативности, `buildClauses(null)`, `deepEqual` вместо `assert(r, {...})`.
 
-- [ ] 18 [test] `demo.calculator.test.js` не тестирует
+- [x] 18 [test] `demo.calculator.test.js` не тестирует
   - `assert` импортирован, но не используется — только `console.log` AST. Нет ни одного утверждения (mocha видит пустой файл).
   - Фикс: добавить asserts (и заодно поймать пункт 4).
 
-- [ ] 17 [improvement] Рассогласование метаданных
+- [x] 17 [improvement] Рассогласование метаданных
   - npm-имя `tuco` vs bower-имя `tuco.js` (`package.json:2`, `bower.json:2`);
   - URL лицензии → `hollander/tuco.js` (`package.json:23`), bower homepage → `Hollander/tuco.js` (`bower.json:4`), repository → `Pavel-Husakouski/tuco.js` (`package.json:7`).
   - Фикс: унифицировать на один аккаунт и одно имя.
@@ -60,7 +60,7 @@
   - Нельзя сказать, *где* парсинг упал и *что* ожидалось. Из-за этого в query-демо появился хак `parseWithRestore` (переписывает вход, заменяя «плохой» символ на пробел).
   - Вариант: возвращать `{expected, pos}` или failure-объект вместо `null` — уберёт необходимость в костыле.
 
-- [ ] 8 [design] O(n²) на слайсах
+- [x] 8 [design] O(n²) на слайсах
   - Где: `tuco.js:96-97` — `__anyChar` делает `rest.slice(1)` на каждый символ, каждый раз копируя остаток строки.
   - Для query-строк незаметно, для длинных текстов — больно.
   - Вариант: внутренний курсор `{str, pos}` при сохранении внешнего API.
@@ -70,12 +70,12 @@
   - Любая функция в приложении получает `.map`, свойство к тому же enumerable. Идея «парсер = функция → можно мапить» — хорошая, но реализация рискованная.
   - Вариант: обычная функция `map(parser, f)` + сохранить `.map` как сахар; или сделать свойство non-enumerable.
 
-- [ ] 6 [bug] `assert(r, {...})` вместо `assert.deepEqual`
+- [x] 6 [bug] `assert(r, {...})` вместо `assert.deepEqual`
   - Где: `test/tuco.test.js:420` (тест «all not null when match»).
   - Следствие: второй аргумент `assert` — это *сообщение*, а не ожидание: значения не проверяются вообще, тест проходит «по удаче».
   - Фикс: `assert.deepEqual(r, { value:['x','y','z','1'], rest:'rest' });`.
 
-- [ ] 5 [bug] `!result == null` — мёртвый+ guard из-за приоритета операторов
+- [x] 5 [bug] `!result == null` — мёртвый+ guard из-за приоритета операторов
   - Где: `test/demo.query.test.js:110` в `buildClauses`.
   - Следствие: `(!result) == null` — всегда `false`, ранний выход никогда не срабатывает; при `null` упадёт на `result.kind`.
   - Фикс: `if(result == null) return [];`.

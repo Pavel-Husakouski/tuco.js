@@ -107,7 +107,7 @@ function parseWithRestore(text, parser){
 }
 
 function buildClauses(result){
-	if(!result == null)
+	if(result == null)
 		return [];
 
 	if(result.kind in {"word":0, "verbatim":0} )

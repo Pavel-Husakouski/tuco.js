@@ -417,7 +417,7 @@ describe('all', function(){
         var parse = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
         var r = parse('xyz1rest');
         
-        assert(r,{
+        assert.deepEqual(r,{
             value:['x','y','z','1'],
             rest:'rest'
         });
