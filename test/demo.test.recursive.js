@@ -1,13 +1,11 @@
-const assert = require("assert");
-const tuco = require('../tuco');
-
-eval(tuco.nsImport('tuco'));
+import assert from 'node:assert';
+import { all, charIs, optional } from '../tuco.js';
 
 function toString(x){ 
     if(x === null || typeof x === 'string')
         return x;
     return x.join(''); 
-};
+}
 
 function check(parse, input, value, rest){
     var result = parse(input);

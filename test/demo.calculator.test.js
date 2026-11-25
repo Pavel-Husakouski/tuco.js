@@ -11,10 +11,10 @@
     foldl/foldr дают [op, a, b] (оператор первым).
 */
 
-const assert = require("assert");
-const tuco = require('../tuco');
-
-eval(tuco.nsImport('tuco'));
+import assert from 'node:assert';
+import {
+    all, between, chain, charIs, charMeets, charOneOf, foldl, foldr, or, rep0, rep1
+} from '../tuco.js';
 
 const number = rep1(charOneOf("0123456789")).map(function(x){
     return parseInt(x.join(''));

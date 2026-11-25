@@ -10,6 +10,7 @@
     "name": "Pavel Husakouski"
   },
   "main":"./tuco.js",
+  "type": "module",
   "tags": [
     "query",
     "expression",

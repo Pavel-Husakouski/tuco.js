@@ -13,10 +13,10 @@ specials        > special , {special} ;
 space 			> singleSpace , {singleSpace} ;
 */
 
-const assert = require("assert");
-const tuco = require('../tuco');
-
-eval(tuco.nsImport('tuco'));
+import assert from 'node:assert';
+import {
+    all, between, charExcept, charOneOf, first, optional, or, rep0, rep1, second, word
+} from '../tuco.js';
 
 const opt = optional;
 
@@ -24,7 +24,7 @@ function toString(x){
 	if(x === null || typeof x === 'string')
 		return x;
 	return x.join(''); 
-};
+}
 
 function toWord(v){
 	return {kind:'word', value:toString(v)};

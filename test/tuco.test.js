@@ -1,13 +1,8 @@
-const assert = require("assert");
-const tuco = require('../tuco');
-
-eval(tuco.nsImport('tuco'));
-
-describe('nsImport', function() {
-    it('should not be declared', function(){
-        assert(typeof nsImport === 'undefined');
-    });
-});
+import assert from 'node:assert';
+import {
+    all, anyChar, between, chain, charExcept, charIs, charMeets, charOneOf, first,
+    foldl, foldr, optional, or, rep0, rep1, second, word
+} from '../tuco.js';
 
 describe('map', function() {
     it('map not null', function(){

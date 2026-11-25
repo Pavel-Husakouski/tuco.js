@@ -4,11 +4,9 @@
  digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 */
 
-const assert = require("assert");
-const tuco = require('../tuco');
+import assert from 'node:assert';
+import { all, charIs, charOneOf, optional, rep1 } from '../tuco.js';
 const toString = function(x){ return x.join(''); };
-
-eval(tuco.nsImport('tuco'));
 
 describe('numbers', function() {
     it('numbers not null', function(){

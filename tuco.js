@@ -18,21 +18,7 @@ var tuco  = (function(){
         rep1:rep1,
         first:first,
         second:second,
-        word:word,
-        nsImport:nsImport
-    };
-
-    function nsImport(name){
-        var output='';
-
-        for(var item in tuco){
-            if(!tuco.hasOwnProperty(item) || item == 'nsImport')
-                continue;
-
-            output += 'var ' + item + ' = ' +name+ '.' +item + ';';
-        }
-
-        return output;
+        word:word
     };
 
     // Parsers are functions `rest -> { value, rest } | { failed, pos, expected }`.
@@ -397,9 +383,11 @@ var tuco  = (function(){
         };
     }
 
-    if(typeof module != 'undefined') {
-        module.exports = tuco;
-    }
-
     return tuco;
 })();
+
+export default tuco;
+export const {
+    all, anyChar, between, chain, charExcept, charIs, charMeets, charOneOf,
+    foldl, foldr, optional, or, rep0, rep1, first, second, word
+} = tuco;
