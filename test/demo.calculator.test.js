@@ -1,11 +1,14 @@
 /*
+    expr   = add
+    add    = mul { ('+' | '-') mul }             ; левая  → chain + foldl
+    mul    = unary { ('*' | '/' | '%') unary }   ; левая  → chain + foldl
+    unary  = '-' unary | power                   ; унарный минус слабее ^
+    power  = atom { '^' atom }                   ; правая → chain + foldr
+    atom   = number | var | '(' expr ')'
+    number = [0-9]+
+    var    = [a-zA-Z][a-zA-Z0-9]*
 
-    expr    >  factor { ("+" | "-") factor }
-    factor  >  term   { ("*" | "/") term   }
-    term    >  NUM | "(" expr ")"
-
-    Left-associative: operator chains are folded left with foldl.
-
+    foldl/foldr дают [op, a, b] (оператор первым).
 */
 
 var assert = require("assert");
@@ -17,51 +20,97 @@ var number = rep1(charOneOf("0123456789")).map(function(x){
     return parseInt(x.join(''));
 });
 
-var exprImpl = null;
-var expr = function(x) { return exprImpl(x); };
+var isLetter    = function(c){ return /[a-zA-Z]/.test(c); };
+var isIdentChar = function(c){ return /[a-zA-Z0-9]/.test(c); };
+var ident = all(charMeets(isLetter), rep0(charMeets(isIdentChar))).map(function(v){
+    return v[0] + (v[1] == null ? '' : v[1].join(''));
+});
 
-var term = or(number, between('(', expr, ')'));
+var exprImpl  = null, expr  = function(x){ return exprImpl(x); };
+var addImpl   = null, add   = function(x){ return addImpl(x); };
+var mulImpl   = null, mul   = function(x){ return mulImpl(x); };
+var unaryImpl = null, unary = function(x){ return unaryImpl(x); };
+var powerImpl = null, power = function(x){ return powerImpl(x); };
+var atomImpl  = null, atom  = function(x){ return atomImpl(x); };
 
-var mulOp = or(charIs('*'), charIs('/'));
-var addOp = or(charIs('+'), charIs('-'));
+// atom = number | var | '(' expr ')'
+atomImpl = or(
+    number,
+    ident,
+    between('(', expr, ')')
+);
 
-function apply(op, a, b) {
-    switch(op) {
-        case '+': return a + b;
-        case '-': return a - b;
-        case '*': return a * b;
-        case '/': return a / b;
-        default: throw new Error('unknown operator: ' + op);
-    }
-}
+// power = atom { '^' atom }   — правая ассоциативность, chain + foldr
+powerImpl = chain(atom, charIs('^')).map(foldr());
 
-var factorImpl = chain(term, mulOp).map(foldl(apply));
-var factor = function(x) { return factorImpl(x); };
+// unary = '-' unary | power   — унарный минус слабее ^
+unaryImpl = or(
+    all(charIs('-'), unary),
+    power
+);
 
-var exprImpl = chain(factor, addOp).map(foldl(apply));
+// mul = unary { ('*' | '/' | '%') unary }   — левая, chain + foldl
+mulImpl = chain(unary, or(charIs('*'), charIs('/'), charIs('%'))).map(foldl());
+
+// add = mul { ('+' | '-') mul }   — левая, chain + foldl
+addImpl = chain(mul, or(charIs('+'), charIs('-'))).map(foldl());
+
+exprImpl = add;
 
 describe('calculator', function() {
-    function evalExpr(s) {
-        return expr(s).value;
-    }
+    function parse(s) { return expr(s); }
 
-    it('is left-associative for subtraction', function() {
-        assert.strictEqual(evalExpr('2-3-4'), -5);
+    it('chains subtraction left-associatively', function(){
+        assert.deepEqual(parse('2-3-4').value, ['-', ['-', 2, 3], 4]);
     });
 
-    it('is left-associative for division', function() {
-        assert.strictEqual(evalExpr('10/5/2'), 1);
+    it('chains division left-associatively', function(){
+        assert.deepEqual(parse('10/5/2').value, ['/', ['/', 10, 5], 2]);
     });
 
-    it('gives * and / higher precedence than + and -', function() {
-        assert.strictEqual(evalExpr('2+3*5'), 17);
+    it('gives * / % higher precedence than + -', function(){
+        assert.deepEqual(parse('2+3*5').value, ['+', 2, ['*', 3, 5]]);
     });
 
-    it('evaluates the reference expression', function() {
-        assert.strictEqual(evalExpr('(2+3*5)*(4+7)+1'), 188);
+    it('chains ^ right-associatively (foldr)', function(){
+        assert.deepEqual(parse('2^3^2').value, ['^', 2, ['^', 3, 2]]);
     });
 
-    it('consumes the whole input', function() {
-        assert.strictEqual(expr('2-3-4').rest, '');
+    it('parses modulo', function(){
+        assert.deepEqual(parse('7%4').value, ['%', 7, 4]);
+    });
+
+    it('parses unary minus', function(){
+        assert.deepEqual(parse('-2').value, ['-', 2]);
+    });
+
+    it('binds unary minus looser than ^: -2^2 = -(2^2)', function(){
+        assert.deepEqual(parse('-2^2').value, ['-', ['^', 2, 2]]);
+    });
+
+    it('binds unary minus tighter than *: -2*3 = (-2)*3', function(){
+        assert.deepEqual(parse('-2*3').value, ['*', ['-', 2], 3]);
+    });
+
+    it('parses parens', function(){
+        assert.deepEqual(parse('(2+3)*4').value, ['*', ['+', 2, 3], 4]);
+    });
+
+    it('parses variables', function(){
+        assert.deepEqual(parse('x*(y+1)').value, ['*', 'x', ['+', 'y', 1]]);
+    });
+
+    it('consumes the whole input', function(){
+        assert.strictEqual(parse('2-3-4').rest, '');
+        assert.strictEqual(parse('2^3^2').rest, '');
+    });
+
+    it('shows the ASTs', function(){
+        console.log('2-3-4    ->', JSON.stringify(parse('2-3-4')));
+        console.log('2^3^2    ->', JSON.stringify(parse('2^3^2')));
+        console.log('2+3*5    ->', JSON.stringify(parse('2+3*5')));
+        console.log('-2^2     ->', JSON.stringify(parse('-2^2')));
+        console.log('(2+3)*4  ->', JSON.stringify(parse('(2+3)*4')));
+        console.log('x*(y+1)  ->', JSON.stringify(parse('x*(y+1)')));
     });
 });
