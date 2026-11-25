@@ -199,6 +199,9 @@ var tuco  = (function(){
     function __all(combinators, indexToTake){
         var parsers = __builtin(combinators);
 
+        // Один комбинатор возвращается без обёртки: результат будет скаляром,
+        // а не массивом. Отсюда `optional(a)` → скаляр, `optional(a, b)` →
+        // [va, vb]; то же касается rep1/rep0 (см. DESIGN.md).
         if(parsers.length == 1)
             return parsers[0];
 
