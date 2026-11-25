@@ -256,10 +256,7 @@ var tuco  = (function(){
                 return result1;
 
             var result0 = __rep0(parser)(result1.rest);
-            var value = [result1.value].concat(result0.value);
-
-            if(result0.value == null)
-                value = value.slice(0,-1);
+            var value = [result1.value].concat(result0.value == null ? [] : result0.value);
 
             return {value:value, rest:result0.rest};
         }
