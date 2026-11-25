@@ -201,7 +201,7 @@ var tuco  = (function(){
     function rep1() {
         var args = __toArray(arguments);
 
-        __expect(__areCombinators(args), '`rep1` accepts at least one combinator');
+        __expect(__areCombinators(args) && args.length >= 1, '`rep1` accepts at least one combinator');
 
         var parser = __all(args);
 
@@ -224,7 +224,7 @@ var tuco  = (function(){
     function rep0(){
         var args = __toArray(arguments);
 
-        __expect(__areCombinators(args), '`rep0` accepts at least one combinator');
+        __expect(__areCombinators(args) && args.length >= 1, '`rep0` accepts at least one combinator');
 
         return optional(rep1.apply(null, args));
     }
@@ -232,7 +232,7 @@ var tuco  = (function(){
     function optional(){
         var args = __toArray(arguments);
 
-        __expect(__areCombinators(args), '`optional` accepts at least one combinator');
+        __expect(__areCombinators(args) && args.length >= 1, '`optional` accepts at least one combinator');
 
         var parser = __all(args);
 
