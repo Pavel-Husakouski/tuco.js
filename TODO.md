@@ -4,6 +4,11 @@
 
 ---
 
+- [x] 21 [bug] Унарный минус связывается сильнее `^` (нужно слабее)
+  - Где: `test/demo.calculator-2.test.js` — `atom = ... | '-' atom`.
+  - Следствие: `-2^2` парсился как `(-2)^2`, а конвенция — `-(2^2)`.
+  - Фикс: убрать `'-' atom` из `atom`, вставить уровень `unary = '-' unary | power` между `mul` и `power`.
+
 - [x] 20 [feature] `chain` / `foldl` / `foldr` — свёртка цепочек операторов
   - Где: `tuco.js` (экспорт `chain`, `foldl`, `foldr`), тесты `test/tuco.test.js`.
   - `chain(operand, operator)` = `all(operand, rep0(all(operator, operand)))`, возвращает `[head, pairs]`.

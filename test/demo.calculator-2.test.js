@@ -1,9 +1,10 @@
 /*
     expr   = add
     add    = mul { ('+' | '-') mul }             ; левая  → chain + foldl
-    mul    = power { ('*' | '/' | '%') power }   ; левая  → chain + foldl
+    mul    = unary { ('*' | '/' | '%') unary }   ; левая  → chain + foldl
+    unary  = '-' unary | power                   ; унарный минус слабее ^
     power  = atom { '^' atom }                   ; правая → chain + foldr
-    atom   = number | var | '-' atom | '(' expr ')'
+    atom   = number | var | '(' expr ')'
     number = [0-9]+
     var    = [a-zA-Z][a-zA-Z0-9]*
 
@@ -30,29 +31,35 @@ var ident = all(charMeets(isLetter), rep0(charMeets(isIdentChar))).map(function(
 var exprImpl  = null, expr  = function(x){ return exprImpl(x); };
 var addImpl   = null, add   = function(x){ return addImpl(x); };
 var mulImpl   = null, mul   = function(x){ return mulImpl(x); };
+var unaryImpl = null, unary = function(x){ return unaryImpl(x); };
 var powerImpl = null, power = function(x){ return powerImpl(x); };
 var atomImpl  = null, atom  = function(x){ return atomImpl(x); };
 
-// atom = number | var | '-' atom | '(' expr ')'
+// atom = number | var | '(' expr ')'
 atomImpl = or(
     number,
     ident,
-    all(charIs('-'), atom),
     between('(', expr, ')')
 );
 
 // power = atom { '^' atom }   — правая ассоциативность, chain + foldr
 powerImpl = chain(atom, charIs('^')).map(foldr());
 
-// mul = power { ('*' | '/' | '%') power }   — левая, chain + foldl
-mulImpl = chain(power, or(charIs('*'), charIs('/'), charIs('%'))).map(foldl());
+// unary = '-' unary | power   — унарный минус слабее ^
+unaryImpl = or(
+    all(charIs('-'), unary),
+    power
+);
+
+// mul = unary { ('*' | '/' | '%') unary }   — левая, chain + foldl
+mulImpl = chain(unary, or(charIs('*'), charIs('/'), charIs('%'))).map(foldl());
 
 // add = mul { ('+' | '-') mul }   — левая, chain + foldl
 addImpl = chain(mul, or(charIs('+'), charIs('-'))).map(foldl());
 
 exprImpl = add;
 
-describe('calculator (fixed: foldl для левой, foldr для ^)', function() {
+describe('calculator (fixed: foldl/foldr, унарный минус слабее ^)', function() {
     function parse(s) { return expr(s); }
 
     it('chains subtraction left-associatively', function(){
@@ -77,6 +84,14 @@ describe('calculator (fixed: foldl для левой, foldr для ^)', function
 
     it('parses unary minus', function(){
         assert.deepEqual(parse('-2').value, ['-', 2]);
+    });
+
+    it('binds unary minus looser than ^: -2^2 = -(2^2)', function(){
+        assert.deepEqual(parse('-2^2').value, ['-', ['^', 2, 2]]);
+    });
+
+    it('binds unary minus tighter than *: -2*3 = (-2)*3', function(){
+        assert.deepEqual(parse('-2*3').value, ['*', ['-', 2], 3]);
     });
 
     it('parses parens', function(){
