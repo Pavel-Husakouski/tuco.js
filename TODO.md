@@ -81,7 +81,7 @@
   - Проверено: `tuco.rep1()('a')`, `tuco.optional()('a')` → TypeError.
   - Фикс: добавить `args.length >= 1` в `__expect`.
 
-- [ ] 2 [bug] `word('')` создаёт сломанный парсер
+- [x] 2 [bug] `word('')` создаёт сломанный парсер
   - Где: `tuco.js:190-199` — `__expect` проверяет только `__isString`, хотя сообщение обещает «non-empty string».
   - Следствие: `''.split('')` → `[]`, `__all([])` возвращает парсер, который при вызове кидает `TypeError: Cannot read properties of undefined (reading 'rest')` (`tuco.js:168`). Падает не при построении, а в момент парсинга.
   - Проверено: `tuco.word('')('a')` → TypeError.

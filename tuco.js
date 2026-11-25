@@ -188,7 +188,7 @@ var tuco  = (function(){
     }
 
     function word(text){
-        __expect(__isString(text), '`word` accepts non-empty string');
+        __expect(__isString(text) && text.length > 0, '`word` accepts non-empty string');
 
         if(text.length == 1)
             return charIs(text);
