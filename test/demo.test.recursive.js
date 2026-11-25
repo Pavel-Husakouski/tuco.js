@@ -1,18 +1,18 @@
-var assert = require("assert");
-var tuco = require('../tuco');
+const assert = require("assert");
+const tuco = require('../tuco');
 
 eval(tuco.nsImport('tuco'));
 
 function toString(x){ 
-    if(x == null || typeof x == 'string')
+    if(x === null || typeof x === 'string')
         return x;
     return x.join(''); 
 };
 
 function check(parse, input, value, rest){
-    var r = parse(input);
+    var result = parse(input);
 
-    assert.deepEqual(r, {
+    assert.deepEqual(result, {
         value: value || input,
         rest: rest || ''
     }); 
@@ -21,7 +21,7 @@ function check(parse, input, value, rest){
 describe('recursive', function() {
 
     it("S = '(', [S], ')', [S]", function(){
-        var sImpl = all(charIs('('), optional(s).map(toString) , charIs(')'), optional(s).map(toString)).map(toString);
+        const sImpl = all(charIs('('), optional(s).map(toString) , charIs(')'), optional(s).map(toString)).map(toString);
 
         function s(x) { return  sImpl(x); };
         

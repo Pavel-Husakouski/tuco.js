@@ -11,19 +11,19 @@
     foldl/foldr дают [op, a, b] (оператор первым).
 */
 
-var assert = require("assert");
-var tuco = require('../tuco');
+const assert = require("assert");
+const tuco = require('../tuco');
 
 eval(tuco.nsImport('tuco'));
 
-var number = rep1(charOneOf("0123456789")).map(function(x){
+const number = rep1(charOneOf("0123456789")).map(function(x){
     return parseInt(x.join(''));
 });
 
-var isLetter    = function(c){ return /[a-zA-Z]/.test(c); };
-var isIdentChar = function(c){ return /[a-zA-Z0-9]/.test(c); };
-var ident = all(charMeets(isLetter), rep0(charMeets(isIdentChar))).map(function(v){
-    return v[0] + (v[1] == null ? '' : v[1].join(''));
+const isLetter    = function(c){ return /[a-zA-Z]/.test(c); };
+const isIdentChar = function(c){ return /[a-zA-Z0-9]/.test(c); };
+const ident = all(charMeets(isLetter), rep0(charMeets(isIdentChar))).map(function(v){
+    return v[0] + (v[1] === null ? '' : v[1].join(''));
 });
 
 var exprImpl  = null, expr  = function(x){ return exprImpl(x); };

@@ -13,15 +13,15 @@ specials        > special , {special} ;
 space 			> singleSpace , {singleSpace} ;
 */
 
-var assert = require("assert");
-var tuco = require('../tuco');
+const assert = require("assert");
+const tuco = require('../tuco');
 
 eval(tuco.nsImport('tuco'));
 
-var opt = optional;
+const opt = optional;
 
 function toString(x){ 
-	if(x == null || typeof x == 'string')
+	if(x === null || typeof x === 'string')
 		return x;
 	return x.join(''); 
 };
@@ -35,11 +35,11 @@ function toVerbatim(v) {
 }
 
 function toOperator(v) {
-	return {kind:v == null ? 'AND' : v};
+	return {kind:v === null ? 'AND' : v};
 }
 
 function toRightArg (v){
-	if(v == null)
+	if(v === null)
 		return v;
 
 	var op = v[0];
@@ -50,7 +50,7 @@ function toRightArg (v){
 }
 
 function toLeftArg (v){
-	if(v[1] == null)
+	if(v[1] === null)
 		return v[0];
 
 	var op = v[1];
@@ -60,8 +60,8 @@ function toLeftArg (v){
 	return op;
 }
 
-var spaceConst = ' \u00A0,;\n\r\t';
-var specialConst = '"()';
+const spaceConst = ' \u00A0,;\n\r\t';
+const specialConst = '"()';
 
 var shapedLogicImpl = null;
 var logicImpl = null;
@@ -71,43 +71,35 @@ function shapedLogic(x) { return shapedLogicImpl(x); };
 function logic(x) { return logicImpl(x); };
 function query(x) { return queryImpl(x); };
 
-var special 	= rep1(charOneOf(specialConst)).map(toString);
-var space   	= rep1(charOneOf(spaceConst));
-var nonSpecial 	= rep1(charExcept(spaceConst + specialConst)).map(toString);
-var singleWord 	= all(nonSpecial, rep0( special, nonSpecial)).map(toWord);
-var verbatim 	= between('"', rep0(charExcept('"')), '"').map(toVerbatim);
-var shaped 		= or(between('(', query, ')'), verbatim);
-var op0 		= opt(first(or('AND', 'OR'), opt(space))).map(toOperator); 
-var op1 		= opt(first(or('AND', 'OR'), space)).map(toOperator); 
-var logicRest 	= second(space, opt(or( all(op0, shapedLogic), all(op1, logic) ))).map(toRightArg);
-var shapedLogicImpl = all(shaped, opt(logicRest)).map(toLeftArg);
-var logicImpl   = all(singleWord, opt(logicRest)).map(toLeftArg);
-var queryImpl 	= between(opt(space), opt(or(shapedLogic, logic)), opt(space));
+const special 	= rep1(charOneOf(specialConst)).map(toString);
+const space   	= rep1(charOneOf(spaceConst));
+const nonSpecial 	= rep1(charExcept(spaceConst + specialConst)).map(toString);
+const singleWord 	= all(nonSpecial, rep0( special, nonSpecial)).map(toWord);
+const verbatim 	= between('"', rep0(charExcept('"')), '"').map(toVerbatim);
+const shaped 		= or(between('(', query, ')'), verbatim);
+const op0 		= opt(first(or('AND', 'OR'), opt(space))).map(toOperator); 
+const op1 		= opt(first(or('AND', 'OR'), space)).map(toOperator); 
+const logicRest 	= second(space, opt(or( all(op0, shapedLogic), all(op1, logic) ))).map(toRightArg);
+shapedLogicImpl = all(shaped, opt(logicRest)).map(toLeftArg);
+logicImpl   = all(singleWord, opt(logicRest)).map(toLeftArg);
+queryImpl 	= between(opt(space), opt(or(shapedLogic, logic)), opt(space));
 
-function fixByRest(text, rest){
-	var pos = text.length - rest.length;
+function parseQuery(text){
+	var result = query(text);
 
-	if(pos < 0)
-		return text;
+	if(result.failed)
+		return result;
 
-	return text.slice(0, pos) + ' ' + text.slice(pos + 1);
-}
+	if(result.rest === '')
+		return result;
 
-function parseWithRestore(text, parser){
-	do {
-		var result = parser(text);
-
-		if(result.rest == '')
-			break;
-
-		text = fixByRest(text, result.rest);
-	} while(result.rest != '');
-
-	return result
+	// Leftover input: the grammar consumed a prefix and stopped.  Report the
+	// first unconsumed character's position as the error site.
+	return { failed:true, pos: text.length - result.rest.length, expected:['end of input'] };
 }
 
 function buildClauses(result){
-	if(result == null)
+	if(result === null)
 		return [];
 
 	if(result.kind in {"word":0, "verbatim":0} )
@@ -123,7 +115,7 @@ describe('query', function() {
    	it("big", function(){
 		var result = query('bamboo OR (join AND ")quted test laenin,()!" bbq) AND "" OR ncx AND pgt');
 		
-		assert(result.rest == "");
+		assert(result.rest === "");
    	});
 
 
@@ -266,28 +258,24 @@ describe('query', function() {
    	});
 });
 
-describe('restore errors', function(){
-	it('quote', function() {
-		var result = parseWithRestore('"test', query);
+describe('query errors', function(){
+	it('dangling quote', function() {
+		var result = parseQuery('"test');
 
 		assert.deepEqual(result, {
-			value:{
-				kind:'word',
-				value:'test'
-			},
-			rest:''
+			failed:true,
+			pos:0,
+			expected:['end of input']
 		});
 	});
 
-	it('parenthesis', function() {
-		var result = parseWithRestore('test (', query);
+	it('dangling parenthesis', function() {
+		var result = parseQuery('test (');
 
 		assert.deepEqual(result, {
-			value:{
-				kind:'word',
-				value:'test'
-			},
-			rest:''
+			failed:true,
+			pos:5,
+			expected:['end of input']
 		});
 	});
 });

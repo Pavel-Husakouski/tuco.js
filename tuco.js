@@ -35,10 +35,12 @@ var tuco  = (function(){
         return output;
     };
 
-    // Parsers are functions `rest -> { value, rest } | null`.  Internally the
-    // remaining input is a cursor `{ str, pos }`, so no substring is ever
-    // copied while parsing.  `__expose` converts the cursor back to a plain
-    // string only at the public boundary, which is O(n) once instead of O(n^2).
+    // Parsers are functions `rest -> { value, rest } | { failed, pos, expected }`.
+    // Internally the remaining input is a cursor `{ str, pos }`, so no substring
+    // is ever copied while parsing.  `__expose` converts the cursor back to a
+    // plain string only at the public boundary, which is O(n) once instead of
+    // O(n^2).  A failed parse carries the position it stopped at and what it
+    // expected there, instead of a bare `null`.
 
     function __isCursor(x){
         return x != null && typeof x === 'object' && __isString(x.str) && typeof x.pos === 'number';
@@ -51,30 +53,42 @@ var tuco  = (function(){
     }
 
     function __materialize(result){
-        if(result == null)
-            return null;
+        if(result == null || __isFail(result))
+            return result;
         return { value: result.value, rest: result.rest.str.slice(result.rest.pos) };
     }
 
     function __expose(parser){
-        return function(rest){
+        var exposed = function(rest){
             if(__isCursor(rest))
                 return parser(rest);
             return __materialize(parser(__toCursor(rest)));
         };
+
+        exposed.map = function(projection){
+            return __expose(__map(parser, projection));
+        };
+
+        return exposed;
     }
 
-    Function.prototype.map = function(projection) {
+    function __map(parser, projection){
         __expect(__isFunction(projection), '`map` accepts projection function');
 
-        var parser = this;
+        return function _map(cursor){
+            var result = parser(cursor);
 
-        return function _map(rest) {
-            var result = parser(rest);
-
-            return result == null ? null : { value:projection(result.value), rest:result.rest };
+            return __isFail(result) ? result : { value: projection(result.value), rest: result.rest };
         };
-    };
+    }
+
+    function __fail(pos, expected){
+        return { failed: true, pos: pos, expected: __isArray(expected) ? expected : [expected] };
+    }
+
+    function __isFail(result){
+        return result != null && result.failed === true;
+    }
 
     function __expect(checkResult, msg){
         if(checkResult)
@@ -88,7 +102,7 @@ var tuco  = (function(){
 
         return charMeets(function(ch) {
             return chars.indexOf(ch) < 0;
-        });
+        }, 'char except "' + chars + '"');
     }
 
     function charOneOf(chars){
@@ -96,7 +110,7 @@ var tuco  = (function(){
 
         return charMeets(function(ch) {
             return chars.indexOf(ch) > -1;
-        });
+        }, 'one of "' + chars + '"');
     }
 
     function charIs(chr){
@@ -104,17 +118,19 @@ var tuco  = (function(){
 
         return charMeets(function(ch) {
             return ch == chr;
-        });
+        }, '"' + chr + '"');
     }
 
-    function charMeets(predicate){
+    function charMeets(predicate, expected){
         __expect(__isFunction(predicate), '`charMeets` accepts predicate');
 
         return __expose(function(cursor){
             var result = __anyChar(cursor);
 
-            if(!result || !predicate(result.value))
-                return null;
+            if(__isFail(result))
+                return result;
+            if(!predicate(result.value))
+                return __fail(cursor.pos, expected == null ? 'char matching predicate' : expected);
             return result;
         });
     }
@@ -125,7 +141,7 @@ var tuco  = (function(){
 
     function __anyChar(cursor){
         if(cursor == null || cursor.pos >= cursor.str.length)
-            return null;
+            return __fail(cursor == null ? 0 : cursor.pos, 'any character');
 
         return { value: cursor.str.charAt(cursor.pos), rest: { str: cursor.str, pos: cursor.pos + 1 } };
     }
@@ -193,8 +209,8 @@ var tuco  = (function(){
 
             for(var i = 0; i < parsers.length; i++){
                 result = parsers[i](rest);
-                if(result == null)
-                    return null;
+                if(__isFail(result))
+                    return result;
                 results.push(result.value);
                 rest = result.rest;
             }
@@ -236,8 +252,8 @@ var tuco  = (function(){
         return function(cursor){
             var result1 = parser(cursor);
 
-            if(result1 == null)
-                return null;
+            if(__isFail(result1))
+                return result1;
 
             var result0 = __rep0(parser)(result1.rest);
             var value = [result1.value].concat(result0.value);
@@ -273,7 +289,7 @@ var tuco  = (function(){
         return function(cursor){
             var result = parser(cursor);
 
-            return result == null ? {value:null, rest:cursor} : result;
+            return __isFail(result) ? {value:null, rest:cursor} : result;
         }
     }
 
@@ -287,14 +303,43 @@ var tuco  = (function(){
 
     function __or(parsers){
         return function(cursor){
+            var failures = [];
+
             for(var i = 0; i < parsers.length; i++){
                 var result = parsers[i](cursor);
 
-                if(result != null)
+                if(!__isFail(result))
                     return result;
+                failures.push(result);
             }
-            return null;
+
+            return __mergeFailures(failures);
         }
+    }
+
+    function __mergeFailures(failures){
+        var best = failures[0];
+
+        for(var i = 1; i < failures.length; i++){
+            var f = failures[i];
+
+            if(f.pos > best.pos)
+                best = f;
+            else if(f.pos === best.pos)
+                best = __fail(best.pos, __union(best.expected, f.expected));
+        }
+
+        return best;
+    }
+
+    function __union(a, b){
+        var out = a.slice();
+
+        for(var i = 0; i < b.length; i++)
+            if(out.indexOf(b[i]) < 0)
+                out.push(b[i]);
+
+        return out;
     }
 
     function or(){
