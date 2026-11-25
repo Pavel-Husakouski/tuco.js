@@ -5,10 +5,13 @@ var tuco  = (function(){
         all:all,
         anyChar:anyChar,
         between:between,
+        chain:chain,
         charExcept:charExcept,
         charIs:charIs,
         charMeets:charMeets,
         charOneOf:charOneOf,
+        foldl:foldl,
+        foldr:foldr,
         optional:optional,
         or:or,
         rep0:rep0,
@@ -259,6 +262,50 @@ var tuco  = (function(){
             }
             return null;
         }
+    }
+
+    function chain(operand, operator){
+        __expect(__areCombinators([operand, operator]), '`chain` accepts two combinators');
+
+        return all(operand, rep0(all(operator, operand)));
+    }
+
+    function __defaultApply(op, left, right){
+        return [op, left, right];
+    }
+
+    function foldl(apply){
+        __expect(apply == null || __isFunction(apply), '`foldl` accepts an optional apply function');
+        apply = apply || __defaultApply;
+
+        return function _foldl(v){
+            var acc = v[0];
+            var pairs = v[1] == null ? [] : v[1];
+
+            for(var i = 0; i < pairs.length; i++)
+                acc = apply(pairs[i][0], acc, pairs[i][1]);
+
+            return acc;
+        };
+    }
+
+    function foldr(apply){
+        __expect(apply == null || __isFunction(apply), '`foldr` accepts an optional apply function');
+        apply = apply || __defaultApply;
+
+        return function _foldr(v){
+            var pairs = v[1] == null ? [] : v[1];
+
+            if(pairs.length == 0)
+                return v[0];
+
+            var acc = pairs[pairs.length - 1][1];
+
+            for(var i = pairs.length - 1; i >= 0; i--)
+                acc = apply(pairs[i][0], i == 0 ? v[0] : pairs[i - 1][1], acc);
+
+            return acc;
+        };
     }
 
     if(typeof module != 'undefined') {

@@ -4,8 +4,7 @@
     factor  >  term   { ("*" | "/") term   }
     term    >  NUM | "(" expr ")"
 
-    Left-associative: operator tails fold left via an accumulator,
-    so "2-3-4" parses as (2-3)-4, not 2-(3-4).
+    Left-associative: operator chains are folded left with foldl.
 
 */
 
@@ -23,6 +22,9 @@ var expr = function(x) { return exprImpl(x); };
 
 var term = or(number, between('(', expr, ')'));
 
+var mulOp = or(charIs('*'), charIs('/'));
+var addOp = or(charIs('+'), charIs('-'));
+
 function apply(op, a, b) {
     switch(op) {
         case '+': return a + b;
@@ -33,23 +35,10 @@ function apply(op, a, b) {
     }
 }
 
-// operand { op operand } — folds operators left
-function leftAssoc(operand, ops) {
-    var rest = rep0(all(ops, operand));
-    return all(operand, rest).map(function(v) {
-        var acc = v[0];
-        var pairs = v[1] == null ? [] : v[1];
-        for (var i = 0; i < pairs.length; i++) {
-            acc = apply(pairs[i][0], acc, pairs[i][1]);
-        }
-        return acc;
-    });
-}
-
-var factorImpl = leftAssoc(term, or(charIs('*'), charIs('/')));
+var factorImpl = chain(term, mulOp).map(foldl(apply));
 var factor = function(x) { return factorImpl(x); };
 
-var exprImpl = leftAssoc(factor, or(charIs('+'), charIs('-')));
+var exprImpl = chain(factor, addOp).map(foldl(apply));
 
 describe('calculator', function() {
     function evalExpr(s) {

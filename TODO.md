@@ -4,6 +4,12 @@
 
 ---
 
+- [x] 20 [feature] `chain` / `foldl` / `foldr` — свёртка цепочек операторов
+  - Где: `tuco.js` (экспорт `chain`, `foldl`, `foldr`), тесты `test/tuco.test.js`.
+  - `chain(operand, operator)` = `all(operand, rep0(all(operator, operand)))`, возвращает `[head, pairs]`.
+  - `foldl(apply?)` / `foldr(apply?)` сворачивают пары влево/вправо; дефолтный `apply` — `(op, a, b) => [op, a, b]`.
+  - Даёт левую (`2-3-4`) и правую (`2^3^2`) ассоциативность без левой рекурсии.
+
 - [ ] 19 [test] Регрессионные тесты на найденные баги
   - Сейчас сьют зелёный (74 passing), но баги 1–6 тестами не покрыты.
   - Добавить: `word('')` (expect при построении), `rep1()/rep0()/optional()` без аргументов, `2-3-4` для ассоциативности, `buildClauses(null)`, `deepEqual` вместо `assert(r, {...})`.

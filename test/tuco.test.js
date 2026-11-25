@@ -474,3 +474,64 @@ describe('anyChar', function(){
         assert(null == anyChar()(null));
     })
 });
+
+describe('chain / foldl / foldr', function() {
+    var num = rep1(charOneOf('0123456789')).map(function(x){
+        return parseInt(x.join(''));
+    });
+    var minus = charIs('-');
+
+    it('chain returns [head, pairs] for a chain', function(){
+        var r = chain(num, minus)('2-3-4');
+
+        assert.deepEqual(r, { value:[2, [['-',3], ['-',4]]], rest:'' });
+    });
+
+    it('chain returns [head, null] when no operator follows', function(){
+        var r = chain(num, minus)('2');
+
+        assert.deepEqual(r, { value:[2, null], rest:'' });
+    });
+
+    it('foldl builds a left-leaning AST with the default apply', function(){
+        var p = chain(num, minus).map(foldl());
+
+        assert.deepEqual(p('2-3-4').value, ['-', ['-', 2, 3], 4]);
+    });
+
+    it('foldr builds a right-leaning AST with the default apply', function(){
+        var p = chain(num, minus).map(foldr());
+
+        assert.deepEqual(p('2-3-4').value, ['-', 2, ['-', 3, 4]]);
+    });
+
+    it('foldl folds left with a custom apply', function(){
+        var p = chain(num, minus).map(foldl(function(op, a, b){ return a - b; }));
+
+        assert.deepEqual(p('2-3-4').value, -5);
+    });
+
+    it('foldr folds right with a custom apply', function(){
+        var p = chain(num, minus).map(foldr(function(op, a, b){ return a - b; }));
+
+        assert.deepEqual(p('2-3-4').value, 3);
+    });
+
+    it('foldl/foldr return the head unchanged for a single operand', function(){
+        var sub = function(op, a, b){ return a - b; };
+        var l = chain(num, minus).map(foldl(sub));
+        var r = chain(num, minus).map(foldr(sub));
+
+        assert.deepEqual(l('7').value, 7);
+        assert.deepEqual(r('7').value, 7);
+    });
+
+    it('chain validates its arguments', function(){
+        assert.throws(function(){ chain(word('a')); }, /accepts two combinators/);
+    });
+
+    it('foldl/foldr validate the optional apply', function(){
+        assert.throws(function(){ foldl('nope'); }, /optional apply function/);
+        assert.throws(function(){ foldr('nope'); }, /optional apply function/);
+    });
+});

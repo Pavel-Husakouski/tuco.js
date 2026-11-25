@@ -1,0 +1,103 @@
+/*
+    expr   = add
+    add    = mul { ('+' | '-') mul }             ; левая  → chain + foldl
+    mul    = power { ('*' | '/' | '%') power }   ; левая  → chain + foldl
+    power  = atom { '^' atom }                   ; правая → chain + foldr
+    atom   = number | var | '-' atom | '(' expr ')'
+    number = [0-9]+
+    var    = [a-zA-Z][a-zA-Z0-9]*
+
+    Фикс по сравнению с demo.calculator-1: цепочки теперь сворачиваются.
+    Вся арифметика свёрнута единообразно: foldl/foldr дают [op, a, b]
+    (оператор первым).
+*/
+
+var assert = require("assert");
+var tuco = require('../tuco');
+
+eval(tuco.nsImport('tuco'));
+
+var number = rep1(charOneOf("0123456789")).map(function(x){
+    return parseInt(x.join(''));
+});
+
+var isLetter    = function(c){ return /[a-zA-Z]/.test(c); };
+var isIdentChar = function(c){ return /[a-zA-Z0-9]/.test(c); };
+var ident = all(charMeets(isLetter), rep0(charMeets(isIdentChar))).map(function(v){
+    return v[0] + (v[1] == null ? '' : v[1].join(''));
+});
+
+var exprImpl  = null, expr  = function(x){ return exprImpl(x); };
+var addImpl   = null, add   = function(x){ return addImpl(x); };
+var mulImpl   = null, mul   = function(x){ return mulImpl(x); };
+var powerImpl = null, power = function(x){ return powerImpl(x); };
+var atomImpl  = null, atom  = function(x){ return atomImpl(x); };
+
+// atom = number | var | '-' atom | '(' expr ')'
+atomImpl = or(
+    number,
+    ident,
+    all(charIs('-'), atom),
+    between('(', expr, ')')
+);
+
+// power = atom { '^' atom }   — правая ассоциативность, chain + foldr
+powerImpl = chain(atom, charIs('^')).map(foldr());
+
+// mul = power { ('*' | '/' | '%') power }   — левая, chain + foldl
+mulImpl = chain(power, or(charIs('*'), charIs('/'), charIs('%'))).map(foldl());
+
+// add = mul { ('+' | '-') mul }   — левая, chain + foldl
+addImpl = chain(mul, or(charIs('+'), charIs('-'))).map(foldl());
+
+exprImpl = add;
+
+describe('calculator (fixed: foldl для левой, foldr для ^)', function() {
+    function parse(s) { return expr(s); }
+
+    it('chains subtraction left-associatively', function(){
+        assert.deepEqual(parse('2-3-4').value, ['-', ['-', 2, 3], 4]);
+    });
+
+    it('chains division left-associatively', function(){
+        assert.deepEqual(parse('10/5/2').value, ['/', ['/', 10, 5], 2]);
+    });
+
+    it('gives * / % higher precedence than + -', function(){
+        assert.deepEqual(parse('2+3*5').value, ['+', 2, ['*', 3, 5]]);
+    });
+
+    it('chains ^ right-associatively (foldr)', function(){
+        assert.deepEqual(parse('2^3^2').value, ['^', 2, ['^', 3, 2]]);
+    });
+
+    it('parses modulo', function(){
+        assert.deepEqual(parse('7%4').value, ['%', 7, 4]);
+    });
+
+    it('parses unary minus', function(){
+        assert.deepEqual(parse('-2').value, ['-', 2]);
+    });
+
+    it('parses parens', function(){
+        assert.deepEqual(parse('(2+3)*4').value, ['*', ['+', 2, 3], 4]);
+    });
+
+    it('parses variables', function(){
+        assert.deepEqual(parse('x*(y+1)').value, ['*', 'x', ['+', 'y', 1]]);
+    });
+
+    it('consumes the whole input', function(){
+        assert.strictEqual(parse('2-3-4').rest, '');
+        assert.strictEqual(parse('2^3^2').rest, '');
+    });
+
+    it('shows the ASTs', function(){
+        console.log('2-3-4    ->', JSON.stringify(parse('2-3-4')));
+        console.log('2^3^2    ->', JSON.stringify(parse('2^3^2')));
+        console.log('2+3*5    ->', JSON.stringify(parse('2+3*5')));
+        console.log('-2^2     ->', JSON.stringify(parse('-2^2')));
+        console.log('(2+3)*4  ->', JSON.stringify(parse('(2+3)*4')));
+        console.log('x*(y+1)  ->', JSON.stringify(parse('x*(y+1)')));
+    });
+});
