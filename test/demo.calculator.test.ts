@@ -11,7 +11,7 @@
     foldLeft/foldRight yield [op, a, b] (operator first).
 */
 
-import assert from 'node:assert';
+import { match } from '@beeff/loose-match';
 import {
     all, between, charIs, charMeets, charOneOf, foldLeft, foldRight, or, rep0, rep1
 } from '../src/tuco.ts';
@@ -67,48 +67,51 @@ describe('calculator', function() {
     function parse(s) { return expr(s); }
 
     it('chains subtraction left-associatively', function(){
-        assert.deepEqual(parse('2-3-4').value, ['-', ['-', 2, 3], 4]);
+        match(parse('2-3-4').value).with(['-', ['-', 2, 3], 4]);
     });
 
     it('chains division left-associatively', function(){
-        assert.deepEqual(parse('10/5/2').value, ['/', ['/', 10, 5], 2]);
+        match(parse('10/5/2').value).with(['/', ['/', 10, 5], 2]);
     });
 
     it('gives * / % higher precedence than + -', function(){
-        assert.deepEqual(parse('2+3*5').value, ['+', 2, ['*', 3, 5]]);
+        match(parse('2+3*5').value).with(['+', 2, ['*', 3, 5]]);
     });
 
     it('chains ^ right-associatively (foldr)', function(){
-        assert.deepEqual(parse('2^3^2').value, ['^', 2, ['^', 3, 2]]);
+        match(parse('2^3^2').value).with(['^', 2, ['^', 3, 2]]);
     });
 
     it('parses modulo', function(){
-        assert.deepEqual(parse('7%4').value, ['%', 7, 4]);
+        match(parse('7%4').value).with(['%', 7, 4]);
     });
 
     it('parses unary minus', function(){
-        assert.deepEqual(parse('-2').value, ['-', 2]);
+        match(parse('-2').value).with(['-', 2]);
     });
 
     it('binds unary minus looser than ^: -2^2 = -(2^2)', function(){
-        assert.deepEqual(parse('-2^2').value, ['-', ['^', 2, 2]]);
+        match(parse('-2^2').value).with(['-', ['^', 2, 2]]);
     });
 
     it('binds unary minus tighter than *: -2*3 = (-2)*3', function(){
-        assert.deepEqual(parse('-2*3').value, ['*', ['-', 2], 3]);
+        match(parse('-2*3').value).with(['*', ['-', 2], 3]);
     });
 
     it('parses parens', function(){
-        assert.deepEqual(parse('(2+3)*4').value, ['*', ['+', 2, 3], 4]);
+        match(parse('(2+3)*4').value).with(['*', ['+', 2, 3], 4]);
     });
 
     it('parses variables', function(){
-        assert.deepEqual(parse('x*(y+1)').value, ['*', 'x', ['+', 'y', 1]]);
+        match(parse('x*(y+1)').value).with(['*', 'x', ['+', 'y', 1]]);
     });
 
-    it('consumes the whole input', function(){
-        assert.strictEqual(parse('2-3-4').rest, '');
-        assert.strictEqual(parse('2^3^2').rest, '');
+    it('2-3-4 consumes the whole input', function(){
+        match(parse('2-3-4').rest).with('');
+    });
+
+    it('2^3^2 consumes the whole input', function(){
+        match(parse('2^3^2').rest).with('');
     });
 
     it('shows the ASTs', function(){

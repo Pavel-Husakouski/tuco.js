@@ -18,11 +18,14 @@ Deliberate simplifications (the parser accepts a little less than strict RFC 523
   against the RFC (anything except the separator and line break is taken).
 */
 
-import assert from 'node:assert';
+import { match, predicate } from '@beeff/loose-match';
 import {
     all, between, charExcept, charIs, charMeets, charOneOf, first,
     optional, or, rep0, rep1, second, word
 } from '../src/tuco.ts';
+
+// Truthy check, used to assert that a rule name is present in the byName map.
+const truthy = predicate(function(x){ return Boolean(x); });
 
 // ---- source: the ABNF grammar of ABNF (RFC 5234) ----
 const source = `
@@ -237,21 +240,23 @@ describe('abnf (meta-demo)', function(){
     it('parses the full ABNF self-description', function(){
         const result = rulelist(source);
         if ('failed' in result) throw new Error('expected success');
-        assert.strictEqual(result.rest, '');
+        match(result.rest).with('');
         rules = result.value;
     });
 
     it('collects core and meta rules by name', function(){
         const map = byName(rules);
-        assert(map.ALPHA && map.DIGIT && map.CRLF && map.WSP);
-        assert(map.rule && map.rulelist && map.alternation && map.concatenation && map.repetition);
-        assert(map['char-val'] && map['num-val'] && map['prose-val']);
+        match(map).with({
+            ALPHA: truthy, DIGIT: truthy, CRLF: truthy, WSP: truthy,
+            rule: truthy, rulelist: truthy, alternation: truthy, concatenation: truthy, repetition: truthy,
+            'char-val': truthy, 'num-val': truthy, 'prose-val': truthy
+        });
     });
 
     it('parses CRLF as the concatenation CR LF', function(){
         const map = byName(rules);
         const crlf = map.CRLF.alt[0];
-        assert.deepEqual(crlf.map(function(r){ return r.el; }), [
+        match(crlf.map(function(r){ return r.el; })).with([
             { kind:'rulename', name:'CR' },
             { kind:'rulename', name:'LF' }
         ]);
@@ -260,17 +265,18 @@ describe('abnf (meta-demo)', function(){
     it('parses a range repetition and a num-val', function(){
         const result = rulelist('x = 1*3DIGIT / %x41-5A\n');
         if ('failed' in result) throw new Error('expected success');
-        assert.strictEqual(result.rest, '');
         const alt = result.value[0].alt;
-        assert.deepEqual(alt[0][0].repeat, { min:1, max:3 });
-        assert.deepEqual(alt[1][0].el, { kind:'num', base:'x', values:['41','5A'], range:true });
+        match([result.rest, alt[0][0].repeat, alt[1][0].el]).with([
+            '',
+            { min:1, max:3 },
+            { kind:'num', base:'x', values:['41','5A'], range:true }
+        ]);
     });
 
     it('parses group, option and prose-val', function(){
         const result = rulelist('x = (a / b) [c] <free text>\n');
         if ('failed' in result) throw new Error('expected success');
-        assert.strictEqual(result.rest, '');
         const el = result.value[0].alt[0];
-        assert.deepEqual(el.map(function(r){ return r.el.kind; }), ['group', 'option', 'prose']);
+        match([result.rest, el.map(function(r){ return r.el.kind; })]).with(['', ['group', 'option', 'prose']]);
     });
 });

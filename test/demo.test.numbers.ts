@@ -4,7 +4,7 @@
  digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 */
 
-import assert from 'node:assert';
+import { match } from '@beeff/loose-match';
 import { all, charIs, charOneOf, optional, rep1 } from '../src/tuco.ts';
 const toString = function(x){ return x.join(''); };
 
@@ -25,10 +25,7 @@ describe('numbers', function() {
         
         const result = number('-012.12E-10zzzzz');
         
-        assert.deepEqual(result,{
-            value:'-012.12E-10',
-            rest:'zzzzz'
-        });
+        match(result).with({ value: '-012.12E-10', rest: 'zzzzz' });
     })
         
 });

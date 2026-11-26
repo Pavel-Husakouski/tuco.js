@@ -6,9 +6,9 @@ Code design and conventions (including test style): [DESIGN.md](./DESIGN.md).
 
 Code comments and `.md` files are always written in English.
 
-## TODO.md
+## CHANGELOG.md
 
-`TODO.md` doubles as a changelog/backlog. Format:
+`CHANGELOG.md` doubles as a changelog/backlog. Format:
 
 - flat list, one item per line: `- [ ] N [tag] description`;
 - new items go on top;

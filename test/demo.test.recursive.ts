@@ -1,4 +1,4 @@
-import assert from 'node:assert';
+import { match } from '@beeff/loose-match';
 import { all, charIs, optional } from '../src/tuco.ts';
 
 function toString(x){ 
@@ -7,28 +7,25 @@ function toString(x){
     return x.join(''); 
 }
 
-function check(parse, input, value?, rest?){
-    const result = parse(input);
-
-    assert.deepEqual(result, {
-        value: value || input,
-        rest: rest || ''
-    }); 
-}
-
 describe('recursive', function() {
 
     it("S = '(', [S], ')', [S]", function(){
-        const sImpl = all(charIs('('), optional(s).map(toString) , charIs(')'), optional(s).map(toString)).map(toString);
+        const sImpl = all(charIs('('), optional(s).map(toString), charIs(')'), optional(s).map(toString)).map(toString);
 
-        function s(x) { return  sImpl(x); };
-        
-        check(s, '()' );
-        check(s, '()()');
-        check(s, '(())');
-        check(s, '()()()()');
-        check(s, '((())(()))(())()');
-        check(s, '(((())(()))((())(())))');
-        check(s, '()((((())(()))((())(())))(((())(()))((())(()))))');
+        function s(x) { return sImpl(x); };
+
+        const inputs = [
+            '()',
+            '()()',
+            '(())',
+            '()()()()',
+            '((())(()))(())()',
+            '(((())(()))((())(())))',
+            '()((((())(()))((())(())))(((())(()))((())(()))))'
+        ];
+
+        match(inputs.map(function(input){ return s(input); })).with(
+            inputs.map(function(input){ return { value: input, rest: '' }; })
+        );
     });
 });

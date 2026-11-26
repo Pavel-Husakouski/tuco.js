@@ -22,19 +22,21 @@ A deliberate asymmetry: the single case yields a plain scalar rather than extra 
 
 ## Test style
 
-Tests follow one pattern: first declare the parser, then run it and save the result, then check the result as a whole.
+Tests follow one pattern: first declare the parser, then run it and save the result, then check it with a single asymmetric matcher — exactly one `match(...).with(...)` per test.
 
 ```ts
-import assert from 'node:assert';
+import { match } from '@beeff/loose-match';
 import { anyChar } from '../src/tuco.ts';
 
 it('value and rest are not when match', function(){
     const parser = anyChar();
     const result = parser('123');
 
-    assert.deepEqual(result, { value: '1', rest: '23' });
+    match(result).with({ value: '1', rest: '23' });
 });
 ```
+
+An object schema checks only the listed properties, so a test states exactly what it cares about and ignores the rest. Array and primitive schemas match by value, exactly like `deepEqual`; combinators (`instanceOf`, `re`, `predicate`, …) turn a rule into a matcher.
 
 Rules:
 
@@ -62,14 +64,14 @@ Rules:
 
 ### Checking errors
 
-The parse result is a tagged union `Result<T> = Success<T> | Fail`, so `.value`/`.rest`/`.pos`/`.expected` are never accessed directly: a test compares the result as a whole via `deepEqual`, or narrows the type via `'failed' in result`.
+The parse result is a tagged union `Result<T> = Success<T> | Fail`, so `.value`/`.rest`/`.pos`/`.expected` are never accessed directly: a test compares the result via `match(...).with(...)`, or narrows the type via `'failed' in result`.
 
 A failure is compared as a whole:
 
 ```ts
 const result = word('abc')('abx');
 
-assert.deepEqual(result, { failed: true, pos: 2, expected: ['"c"'] });
+match(result).with({ failed: true, pos: 2, expected: ['"c"'] });
 ```
 
 A success is compared as a whole:
@@ -77,13 +79,13 @@ A success is compared as a whole:
 ```ts
 const result = word('text')('text and etc.');
 
-assert.deepEqual(result, { value: 'text', rest: ' and etc.' });
+match(result).with({ value: 'text', rest: ' and etc.' });
 ```
 
-When only the fact of failure is needed — narrow via `'failed' in result`:
+When only the fact of failure is needed:
 
 ```ts
-assert('failed' in result);
+match(result).with({ failed: true });
 ```
 
 When a value must be extracted from a successful result for further checks — narrow via `if`:

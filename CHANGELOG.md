@@ -1,11 +1,13 @@
-# TODO — bugs and improvements
+# CHANGELOG
 
 Review results from 25.11.2026. All items verified against the live code (node v26.12.0, test suite: 74 passing).
 
 ---
 
-- [x] 33 [docs] Translate `.md` files to English (`DESIGN.md`, `TODO.md`, `CLAUDE.md`; `README.md` was already English) and document the language rule + `TODO.md` workflow in `CLAUDE.md`
-- [x] 32 [docs] Translate the remaining Russian comments to English: `test/demo.abnf.ts` (header, inline, `;`-comments inside `source`), `test/demo.calculator.test.ts` (header + inline), `test/demo.query.test.ts` (op0/op1 precedence block); `src/` is already English; `DESIGN.md`/`TODO.md`/`CLAUDE.md` — docs/backlog/instructions, untouched
+- [x] 35 [docs] Rename `TODO.md` to `CHANGELOG.md` and update the references in `CLAUDE.md` (section header + text) and the self-references in the changelog
+- [x] 34 [tests] Replace `node:assert` (`deepEqual`/`strictEqual`/`assert`/`throws`) with `@beeff/loose-match` matchers in every test: one `match(...).with(...)` per test; add `@beeff/loose-match` to devDeps; rewrite the `DESIGN.md` test-style section
+- [x] 33 [docs] Translate `.md` files to English (`DESIGN.md`, `CHANGELOG.md`, `CLAUDE.md`; `README.md` was already English) and document the language rule + `CHANGELOG.md` workflow in `CLAUDE.md`
+- [x] 32 [docs] Translate the remaining Russian comments to English: `test/demo.abnf.ts` (header, inline, `;`-comments inside `source`), `test/demo.calculator.test.ts` (header + inline), `test/demo.query.test.ts` (op0/op1 precedence block); `src/` is already English; `DESIGN.md`/`CHANGELOG.md`/`CLAUDE.md` — docs/backlog/instructions, untouched
 - [x] 31 [breaking] Replace `chain`/`foldl`/`foldr` with `foldLeft`/`foldRight` (chain+fold in one step, no `[head, pairs]` leak); `chain`/`foldl`/`foldr` become internal `__*`; update demos/tests and the default export; two overloads (default tree → `Parser<any>`, custom `apply` → `Parser<A>`)
 - [x] 30 [types] Type `foldl`/`foldr` (option 1): input `(value: [V, [P, V][]]) => any`; `apply` with `op: P`, `left`/`right` by meaning (operand `V` / accumulator `any`); the result stays `any`; defaults `V = any`, `P = any`
 - [x] 29 [types] Remove `Parser<any>` via variadic-tuple inference (no overloads): `Combinator<A>` + helpers `ValueOf`/`ValuesOf`/`ScalarOrTuple`/`RepValue`; one generic signature per combinator (`all`/`first`/`second`/`between`/`rep1`/`rep0`/`optional`/`or`/`chain`); leave the bodies unchanged (`__expose<any>` is already compatible — signatures only); leave `char*`/`word` — already `Parser<string>`
