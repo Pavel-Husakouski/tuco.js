@@ -77,17 +77,17 @@ const nonSpecial 	= rep1(charExcept(spaceConst + specialConst)).map(toString);
 const singleWord 	= all(nonSpecial, rep0( special, nonSpecial)).map(toWord);
 const verbatim 	= between('"', rep0(charExcept('"')), '"').map(toVerbatim);
 const shaped 		= or(between('(', query, ')'), verbatim);
-// Приоритет операторов держится на паре вариантов op0/op1 и порядке
-// альтернатив в logicRest (ниже). После левого операнда и разделяющего
-// пробела правый операнд распознаётся одним из двух путей:
+// Operator precedence rests on the op0/op1 pair and the order of the
+// alternatives in logicRest (below). After the left operand and a separating
+// space, the right operand is recognized via one of two paths:
 //
-//   op0 = [AND|OR] + необязательный пробел  ->  правый операнд shaped ('(...)' или '"..."')
-//   op1 = [AND|OR] + обязательный пробел    ->  правый операнд обычное слово
+//   op0 = [AND|OR] + optional space  ->  right operand is shaped ('(...)' or '"..."')
+//   op1 = [AND|OR] + required space  ->  right operand is an ordinary word
 //
-// Пробел обязателен только перед словом: '(' и '"' — однозначные разделители,
-// поэтому 'AND(' и 'AND"..."' читаются как оператор + shaped (пробел не нужен),
-// а 'AND word' требует пробела — иначе 'ANDfoo' останется одним словом.
-// Порядок альтернатив or(op0 + shapedLogic, op1 + logic) и задаёт этот приоритет.
+// A space is required only before a word: '(' and '"' are unambiguous delimiters,
+// so 'AND(' and 'AND"..."' read as operator + shaped (no space needed), while
+// 'AND word' needs the space — otherwise 'ANDfoo' stays one word. The order of
+// the alternatives or(op0 + shapedLogic, op1 + logic) encodes that precedence.
 const op0 		= opt(first(or('AND', 'OR'), opt(space))).map(toOperator); 
 const op1 		= opt(first(or('AND', 'OR'), space)).map(toOperator); 
 const logicRest 	= second(space, opt(or( all(op0, shapedLogic), all(op1, logic) ))).map(toRightArg);

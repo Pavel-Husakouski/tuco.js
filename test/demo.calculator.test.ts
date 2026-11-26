@@ -1,14 +1,14 @@
 /*
     expr   = add
-    add    = mul { ('+' | '-') mul }             ; левая  → foldLeft
-    mul    = unary { ('*' | '/' | '%') unary }   ; левая  → foldLeft
-    unary  = '-' unary | power                   ; унарный минус слабее ^
-    power  = atom { '^' atom }                   ; правая → foldRight
+    add    = mul { ('+' | '-') mul }             ; left → foldLeft
+    mul    = unary { ('*' | '/' | '%') unary }   ; left → foldLeft
+    unary  = '-' unary | power                   ; unary minus binds looser than ^
+    power  = atom { '^' atom }                   ; right → foldRight
     atom   = number | variable | '(' expr ')'
     number = [0-9]+
     variable = [a-zA-Z][a-zA-Z0-9]*
 
-    foldLeft/foldRight дают [op, a, b] (оператор первым).
+    foldLeft/foldRight yield [op, a, b] (operator first).
 */
 
 import assert from 'node:assert';
@@ -46,19 +46,19 @@ atomImpl = or(
     between('(', expr, ')')
 );
 
-// power = atom { '^' atom }   — правая ассоциативность, foldRight
+// power = atom { '^' atom }   — right-associative, foldRight
 powerImpl = foldRight(atom, charIs('^'));
 
-// unary = '-' unary | power   — унарный минус слабее ^
+// unary = '-' unary | power   — unary minus binds looser than ^
 unaryImpl = or(
     all(charIs('-'), unary),
     power
 );
 
-// mul = unary { ('*' | '/' | '%') unary }   — левая, foldLeft
+// mul = unary { ('*' | '/' | '%') unary }   — left, foldLeft
 mulImpl = foldLeft(unary, or(charIs('*'), charIs('/'), charIs('%')));
 
-// add = mul { ('+' | '-') mul }   — левая, foldLeft
+// add = mul { ('+' | '-') mul }   — left, foldLeft
 addImpl = foldLeft(mul, or(charIs('+'), charIs('-')));
 
 exprImpl = add;

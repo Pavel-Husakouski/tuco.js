@@ -1,21 +1,21 @@
 /*
-Мета-демо: ABNF (RFC 5234), распарсенный самим tuco.
+Meta-demo: ABNF (RFC 5234) parsed by tuco itself.
 
-`source` ниже — грамматика ABNF, записанная в ABNF (core rules + ABNF-через-ABNF).
-Парсер `rulelist` собран из комбинаторов tuco и разбирает `source` в AST,
-который проверяется в тестах ниже.
+`source` below is an ABNF grammar written in ABNF (core rules + ABNF-via-ABNF).
+The `rulelist` parser is built from tuco combinators and turns `source` into an
+AST, which the tests below check.
 
-Осознанные упрощения (парсер принимает чуть меньше, чем строгий RFC 5234):
-- перевод строки принимается и как `\r\n`, и как `\n` (не требую строго CRLF);
-- продолжение правила на следующей (с отступом) строке не поддержано: внутри
-  правила пробелы — только SP/HTAB, перевод строки завершает правило; строки-
-  комментарии между правилами пропускаются;
-- разделитель между повторениями в concatenation — любое число SP/HTAB, в т.ч. ноль
-  (жадный `rulename` не даёт двум словам слиться в одно);
-- диапазоны `%x..-..` / `%d..` / `%b..` хранятся как структура
-  `{kind:'num', base, values, range}`, а не разворачиваются в набор символов;
-- тело char-val / prose-val / комментариев не валидируется посимвольно по RFC
-  (берётся «всё, кроме разделителя и перевода строки»).
+Deliberate simplifications (the parser accepts a little less than strict RFC 5234):
+- a line break is accepted as both `\r\n` and `\n` (CRLF is not enforced);
+- continuing a rule on the next (indented) line is not supported: inside a rule
+  whitespace is only SP/HTAB, a line break ends the rule; comment lines between
+  rules are skipped;
+- the separator between repetitions in a concatenation is any number of SP/HTAB,
+  including zero (the greedy `rulename` keeps two words from merging into one);
+- ranges `%x..-..` / `%d..` / `%b..` are kept as a structure
+  `{kind:'num', base, values, range}` rather than expanded into a character set;
+- the body of char-val / prose-val / comments is not validated character-by-character
+  against the RFC (anything except the separator and line break is taken).
 */
 
 import assert from 'node:assert';
@@ -24,37 +24,37 @@ import {
     optional, or, rep0, rep1, second, word
 } from '../src/tuco.ts';
 
-// ---- источник: ABNF-грамматика ABNF (RFC 5234) ----
+// ---- source: the ABNF grammar of ABNF (RFC 5234) ----
 const source = `
 ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z
 BIT            =  "0" / "1"
-CHAR           =  %x01-7F            ; любой 7-битный US-ASCII символ, кроме NUL
+CHAR           =  %x01-7F            ; any 7-bit US-ASCII character except NUL
 CR             =  %x0D               ; carriage return
-CRLF           =  CR LF              ; стандартный перевод строки
-CTL            =  %x00-1F / %x7F     ; управляющие символы
+CRLF           =  CR LF              ; standard newline
+CTL            =  %x00-1F / %x7F     ; control characters
 DIGIT          =  %x30-39            ; 0-9
-DQUOTE         =  %x22               ; " (двойная кавычка)
+DQUOTE         =  %x22               ; " (double quote)
 HEXDIG         =  DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
-HTAB           =  %x09               ; горизонтальная табуляция
+HTAB           =  %x09               ; horizontal tab
 LF             =  %x0A               ; linefeed
-OCTET          =  %x00-FF            ; 8 бит данных
-SP             =  %x20               ; пробел
-VCHAR          =  %x21-7E            ; видимые (печатные) символы
-WSP            =  SP / HTAB          ; whitespace: пробел или табуляция
+OCTET          =  %x00-FF            ; 8 bits of data
+SP             =  %x20               ; space
+VCHAR          =  %x21-7E            ; visible (printable) characters
+WSP            =  SP / HTAB          ; whitespace: space or tab
 
 rulelist       =  1*( rule / (*c-wsp c-nl) )
 
 rule           =  rulename defined-as elements c-nl
-               ; правило продолжается, если следующая строка начинается с whitespace
+               ; a rule continues if the next line starts with whitespace
 
 rulename       =  ALPHA *(ALPHA / DIGIT / "-")
 
 defined-as     =  *c-wsp ("=" / "=/") *c-wsp
-               ; "=" — базовое определение, "=/" — инкрементальная альтернатива
+               ; "=" — basic definition, "=/" — incremental alternative
 
 elements       =  alternation *c-wsp
 
-c-wsp          =  WSP / (c-nl WSP)   ; комментарий и/или whitespace
+c-wsp          =  WSP / (c-nl WSP)   ; comment and/or whitespace
 
 c-nl           =  comment / CRLF
 
@@ -67,16 +67,16 @@ concatenation  =  repetition *(1*c-wsp repetition)
 repetition     =  [repeat] element
 
 repeat         =  1*DIGIT / (*DIGIT "*" *DIGIT)
-               ; 3 — ровно 3, *3 — 0..3, 1*3 — 1..3, * — 0..∞
+               ; 3 — exactly 3, *3 — 0..3, 1*3 — 1..3, * — 0..∞
 
 element        =  rulename / group / option / char-val / num-val / prose-val
 
 group          =  "(" *c-wsp alternation *c-wsp ")"
 
-option         =  "[" *c-wsp alternation *c-wsp "]"   ; то же, что *1(...)
+option         =  "[" *c-wsp alternation *c-wsp "]"   ; same as *1(...)
 
 char-val       =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE
-               ; строка из SP и VCHAR без DQUOTE
+               ; a string of SP and VCHAR without DQUOTE
 
 num-val        =  "%" (bin-val / dec-val / hex-val)
 
@@ -87,10 +87,10 @@ dec-val        =  "d" 1*DIGIT [ 1*("." 1*DIGIT) / ("-" 1*DIGIT) ]
 hex-val        =  "x" 1*HEXDIG [ 1*("." 1*HEXDIG) / ("-" 1*HEXDIG) ]
 
 prose-val      =  "<" *(%x20-3D / %x3F-7E) ">"
-               ; прозаическое описание — последнее средство, в угловых скобках
+               ; prose description — last resort, in angle brackets
 `;
 
-// ---- базовые символьные классы ----
+// ---- basic character classes ----
 const isAlpha  = function(c){ return /[A-Za-z]/.test(c); };
 const isDigit  = function(c){ return /[0-9]/.test(c); };
 const isHexdig = function(c){ return /[0-9A-Fa-f]/.test(c); };
@@ -103,19 +103,19 @@ const SP     = charIs(' ');
 const HTAB   = charIs('\t');
 const WSP    = or(SP, HTAB);
 const LF     = charIs('\n');
-const CRLF   = or(word('\r\n'), LF);   // упрощение: и \r\n, и \n
+const CRLF   = or(word('\r\n'), LF);   // simplification: both \r\n and \n
 const DQUOTE = charIs('"');
 
-// ---- пробелы, переводы строк, комментарии ----
+// ---- whitespace, line breaks, comments ----
 const comment = all(charIs(';'), rep0(charExcept('\n')), CRLF);
-const ws = rep0(WSP);                          // inline: только пробелы и табуляции
-const spacing = rep0(or(WSP, CRLF, comment));  // полный: пробелы + переводы строк + комментарии
+const ws = rep0(WSP);                          // inline: spaces and tabs only
+const spacing = rep0(or(WSP, CRLF, comment));  // full: spaces + line breaks + comments
 
-function lex(p){ return first(p, ws); }   // распарсить p и пропустить хвостовые пробелы/табуляции
+function lex(p){ return first(p, ws); }   // parse p and skip trailing spaces/tabs
 
 function join(xs){ return xs === null ? '' : xs.join(''); }
 
-// ---- атомарные токены (каждый с хвостовым spacing) ----
+// ---- atomic tokens (each with trailing spacing) ----
 
 // rulename = ALPHA *(ALPHA / DIGIT / "-")
 const rulename = lex(all(ALPHA, rep0(or(ALPHA, DIGIT, charIs('-')))))
@@ -139,7 +139,7 @@ function numBody(digit){
 
 function toNum(base){
     return function(body){
-        // body = [first, tail], tail = строка (range) | массив (seq) | null
+        // body = [first, tail], tail = string (range) | array (seq) | null
         const first = body[0], tail = body[1];
         let values, range = false;
         if(tail === null)
@@ -161,7 +161,7 @@ const numVal = lex(second(charIs('%'), or(
 // defined-as = *c-wsp ("=" / "=/") *c-wsp
 const definedAs = lex(or(word('=/'), word('=')));
 
-// ---- взаиморекурсивные правила (forward-объявления) ----
+// ---- mutually recursive rules (forward declarations) ----
 let alternationImpl: any = null;
 const alternation   = function(x){ return alternationImpl(x); };
 let concatenationImpl: any = null;
@@ -224,7 +224,7 @@ const rule = all(rulename, definedAs, alternation, or(comment, CRLF))
 // rulelist = 1*( rule / (*c-wsp c-nl) )
 const rulelist = first(rep1(second(spacing, rule)), spacing);
 
-// ---- тесты ----
+// ---- tests ----
 function byName(rules){
     const map: any = {};
     rules.forEach(function(r){ map[r.name] = r; });
@@ -232,7 +232,7 @@ function byName(rules){
 }
 
 describe('abnf (meta-demo)', function(){
-    let rules: any = null;   // распарсенный AST rulelist(source), общий для тестов
+    let rules: any = null;   // the parsed rulelist(source) AST, shared across the tests
 
     it('parses the full ABNF self-description', function(){
         const result = rulelist(source);

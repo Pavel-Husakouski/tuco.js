@@ -4,6 +4,7 @@
 
 ---
 
+- [x] 32 [docs] Перевести оставшиеся русские комментарии на английский: `test/demo.abnf.ts` (шапка, inline, `;`-комментарии внутри `source`), `test/demo.calculator.test.ts` (шапка + inline), `test/demo.query.test.ts` (блок приоритета op0/op1); `src/` уже английский; `DESIGN.md`/`TODO.md`/`CLAUDE.md` — документация/бэклог/инструкции, не трогать
 - [x] 31 [breaking] Заменить `chain`/`foldl`/`foldr` на `foldLeft`/`foldRight` (chain+fold в один шаг, без `[head, pairs]` наружу); `chain`/`foldl`/`foldr` — во внутренние `__*`; обновить демо/тесты и default-экспорт; два оверлоада (дефолт-дерево → `Parser<any>`, кастомный `apply` → `Parser<A>`)
 - [x] 30 [types] Типизировать `foldl`/`foldr` (вариант 1): вход `(value: [V, [P, V][]]) => any`; `apply` с `op: P`, `left`/`right` по смыслу (операнд `V` / аккумулятор `any`); результат остаётся `any`; дефолты `V = any`, `P = any`
 - [x] 29 [types] Убрать `Parser<any>` через variadic-tuple inference (без оверлоадов): `Combinator<A>` + хелперы `ValueOf`/`ValuesOf`/`ScalarOrTuple`/`RepValue`; по одной generic-сигнатуре на комбинатор (`all`/`first`/`second`/`between`/`rep1`/`rep0`/`optional`/`or`/`chain`); тела не менять (`__expose<any>` уже совместим — сигнатуры-only); `char*`/`word` не трогать — уже `Parser<string>`
