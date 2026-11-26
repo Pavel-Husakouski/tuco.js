@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { all, charIs, optional } from '../tuco.js';
+import { all, charIs, optional } from '../src/tuco.ts';
 
 function toString(x){ 
     if(x === null || typeof x === 'string')
@@ -7,8 +7,8 @@ function toString(x){
     return x.join(''); 
 }
 
-function check(parse, input, value, rest){
-    var result = parse(input);
+function check(parse, input, value?, rest?){
+    const result = parse(input);
 
     assert.deepEqual(result, {
         value: value || input,

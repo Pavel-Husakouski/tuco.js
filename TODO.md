@@ -4,6 +4,15 @@
 
 ---
 
+- [ ] 29 [types] Убрать `Parser<any>` у структурных комбинаторов: generic-сигнатуры для `first`/`second`/`between`/`chain`, оверлоады арностей 1–4 для `all`/`rep1`/`rep0`/`optional`/`or` (в т.ч. через `Combinator<A> = string | ((input) => Result<A>)`); `char*`/`word` не трогать — уже `Parser<string>`
+- [x] 28 [docs] Компактные JSDoc-комментарии 17 публичных функций `src/tuco.ts` (на английском); перевести русский комментарий `__all` (асимметрия арности) на английский
+- [x] 27 [verify] `npm run typecheck` (чисто), `npm test` (107 passing), `npm run build` → `lib/`, sanity-import `lib/tuco.js`
+- [x] 26 [docs] `README.md`: убрать `gulp`, описать `npm install`/`npm test`/`npm run build`/`npm run typecheck`
+- [x] 25 [var] `var` → `const`/`let` в `src/` и `test/`; обновить `DESIGN.md` (стиль `var` → `const`/`let`, пример assert → `deepEqual`)
+- [x] 24 [tests] `test/*.js` → `test/*.ts`: импорт `../src/tuco.ts`; assert через `deepEqual`/`'failed' in r`; forward-decls `: any`; `.mocharc.cjs` → `test/*.ts`
+- [x] 23 [lib] `tuco.js` → `src/tuco.ts`: типы `Cursor`/`Fail`/`Success`/`Result`/`Parser`, rest-параметры вместо `arguments`, type-only экспорт типов, публичный API без изменений (default-объект + 17 named)
+- [x] 22 [setup] Toolchain: devDeps `typescript@7` + `tsx` + `@types/node` + `@types/mocha`; `tsconfig.json` + `tsconfig.build.json`; `package.json` (`main`/`types`/`files`/scripts); `.gitignore` + `lib`
+
 - [x] 21 [bug] Унарный минус связывается сильнее `^` (нужно слабее)
   - Где: `test/demo.calculator-2.test.js` — `atom = ... | '-' atom`.
   - Следствие: `-2^2` парсился как `(-2)^2`, а конвенция — `-(2^2)`.

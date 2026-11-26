@@ -22,7 +22,7 @@ import assert from 'node:assert';
 import {
     all, between, charExcept, charIs, charMeets, charOneOf, first,
     optional, or, rep0, rep1, second, word
-} from '../tuco.js';
+} from '../src/tuco.ts';
 
 // ---- источник: ABNF-грамматика ABNF (RFC 5234) ----
 const source = `
@@ -131,17 +131,17 @@ const proseVal = lex(between(charIs('<'), rep0(charExcept('>\n')).map(join), cha
 
 // num-val = "%" (bin-val / dec-val / hex-val)
 function numBody(digit){
-    var d = rep1(digit).map(join);              // 1*DIGIT
-    var range = second(charIs('-'), d);         // "-" 1*DIGIT
-    var seq = rep1(second(charIs('.'), d));     // 1*("." 1*DIGIT)
+    const d = rep1(digit).map(join);              // 1*DIGIT
+    const range = second(charIs('-'), d);         // "-" 1*DIGIT
+    const seq = rep1(second(charIs('.'), d));     // 1*("." 1*DIGIT)
     return all(d, optional(or(range, seq)));
 }
 
 function toNum(base){
     return function(body){
         // body = [first, tail], tail = строка (range) | массив (seq) | null
-        var first = body[0], tail = body[1];
-        var values, range = false;
+        const first = body[0], tail = body[1];
+        let values, range = false;
         if(tail === null)
             values = [first];
         else if(typeof tail === 'string'){
@@ -162,12 +162,18 @@ const numVal = lex(second(charIs('%'), or(
 const definedAs = lex(or(word('=/'), word('=')));
 
 // ---- взаиморекурсивные правила (forward-объявления) ----
-var alternationImpl = null,   alternation   = function(x){ return alternationImpl(x); };
-var concatenationImpl = null, concatenation = function(x){ return concatenationImpl(x); };
-var repetitionImpl = null,    repetition    = function(x){ return repetitionImpl(x); };
-var elementImpl = null,       element       = function(x){ return elementImpl(x); };
-var groupImpl = null,         group         = function(x){ return groupImpl(x); };
-var optionImpl = null,        option        = function(x){ return optionImpl(x); };
+let alternationImpl: any = null;
+const alternation   = function(x){ return alternationImpl(x); };
+let concatenationImpl: any = null;
+const concatenation = function(x){ return concatenationImpl(x); };
+let repetitionImpl: any = null;
+const repetition    = function(x){ return repetitionImpl(x); };
+let elementImpl: any = null;
+const element       = function(x){ return elementImpl(x); };
+let groupImpl: any = null;
+const group         = function(x){ return groupImpl(x); };
+let optionImpl: any = null;
+const option        = function(x){ return optionImpl(x); };
 
 // repeat = 1*DIGIT / (*DIGIT "*" *DIGIT)
 const repeat = or(
@@ -178,7 +184,7 @@ const repeat = or(
         };
     }),
     rep1(DIGIT).map(function(ds){
-        var n = parseInt(ds.join(''), 10);
+        const n = parseInt(ds.join(''), 10);
         return { min: n, max: n };
     })
 );
@@ -207,7 +213,7 @@ concatenationImpl = rep1(repetition);
 // alternation = concatenation *(*c-wsp "/" *c-wsp concatenation)
 alternationImpl = all(concatenation, rep0(all(lex(charIs('/')), concatenation)))
     .map(function(v){
-        var rest = v[1] === null ? [] : v[1].map(function(pair){ return pair[1]; });
+        const rest = v[1] === null ? [] : v[1].map(function(pair){ return pair[1]; });
         return [v[0]].concat(rest);
     });
 
@@ -220,30 +226,31 @@ const rulelist = first(rep1(second(spacing, rule)), spacing);
 
 // ---- тесты ----
 function byName(rules){
-    var map = {};
+    const map: any = {};
     rules.forEach(function(r){ map[r.name] = r; });
     return map;
 }
 
 describe('abnf (meta-demo)', function(){
-    var parsed = null;
+    let rules: any = null;   // распарсенный AST rulelist(source), общий для тестов
 
     it('parses the full ABNF self-description', function(){
-        parsed = rulelist(source);
-        assert(!parsed.failed);
-        assert.strictEqual(parsed.rest, '');
+        const result = rulelist(source);
+        if ('failed' in result) throw new Error('expected success');
+        assert.strictEqual(result.rest, '');
+        rules = result.value;
     });
 
     it('collects core and meta rules by name', function(){
-        var map = byName(parsed.value);
+        const map = byName(rules);
         assert(map.ALPHA && map.DIGIT && map.CRLF && map.WSP);
         assert(map.rule && map.rulelist && map.alternation && map.concatenation && map.repetition);
         assert(map['char-val'] && map['num-val'] && map['prose-val']);
     });
 
     it('parses CRLF as the concatenation CR LF', function(){
-        var map = byName(parsed.value);
-        var crlf = map.CRLF.alt[0];
+        const map = byName(rules);
+        const crlf = map.CRLF.alt[0];
         assert.deepEqual(crlf.map(function(r){ return r.el; }), [
             { kind:'rulename', name:'CR' },
             { kind:'rulename', name:'LF' }
@@ -251,17 +258,19 @@ describe('abnf (meta-demo)', function(){
     });
 
     it('parses a range repetition and a num-val', function(){
-        var result = rulelist('x = 1*3DIGIT / %x41-5A\n');
+        const result = rulelist('x = 1*3DIGIT / %x41-5A\n');
+        if ('failed' in result) throw new Error('expected success');
         assert.strictEqual(result.rest, '');
-        var alt = result.value[0].alt;
+        const alt = result.value[0].alt;
         assert.deepEqual(alt[0][0].repeat, { min:1, max:3 });
         assert.deepEqual(alt[1][0].el, { kind:'num', base:'x', values:['41','5A'], range:true });
     });
 
     it('parses group, option and prose-val', function(){
-        var result = rulelist('x = (a / b) [c] <free text>\n');
+        const result = rulelist('x = (a / b) [c] <free text>\n');
+        if ('failed' in result) throw new Error('expected success');
         assert.strictEqual(result.rest, '');
-        var el = result.value[0].alt[0];
+        const el = result.value[0].alt[0];
         assert.deepEqual(el.map(function(r){ return r.el.kind; }), ['group', 'option', 'prose']);
     });
 });

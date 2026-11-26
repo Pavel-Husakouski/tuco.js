@@ -9,7 +9,11 @@
   "author": {
     "name": "Pavel Husakouski"
   },
-  "main":"./tuco.js",
+  "main": "./lib/tuco.js",
+  "types": "./lib/tuco.d.ts",
+  "files": [
+    "lib"
+  ],
   "type": "module",
   "tags": [
     "query",
@@ -25,9 +29,15 @@
     }
   ],
   "scripts": {
-    "test": "mocha"
+    "test": "node --import tsx ./node_modules/mocha/bin/mocha.js",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json"
   },
   "devDependencies": {
-    "mocha": "^12.0.3"
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.6.11",
+    "mocha": "^12.0.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }

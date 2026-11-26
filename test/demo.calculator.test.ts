@@ -4,9 +4,9 @@
     mul    = unary { ('*' | '/' | '%') unary }   ; левая  → chain + foldl
     unary  = '-' unary | power                   ; унарный минус слабее ^
     power  = atom { '^' atom }                   ; правая → chain + foldr
-    atom   = number | var | '(' expr ')'
+    atom   = number | variable | '(' expr ')'
     number = [0-9]+
-    var    = [a-zA-Z][a-zA-Z0-9]*
+    variable = [a-zA-Z][a-zA-Z0-9]*
 
     foldl/foldr дают [op, a, b] (оператор первым).
 */
@@ -14,7 +14,7 @@
 import assert from 'node:assert';
 import {
     all, between, chain, charIs, charMeets, charOneOf, foldl, foldr, or, rep0, rep1
-} from '../tuco.js';
+} from '../src/tuco.ts';
 
 const number = rep1(charOneOf("0123456789")).map(function(x){
     return parseInt(x.join(''));
@@ -26,14 +26,20 @@ const ident = all(charMeets(isLetter), rep0(charMeets(isIdentChar))).map(functio
     return v[0] + (v[1] === null ? '' : v[1].join(''));
 });
 
-var exprImpl  = null, expr  = function(x){ return exprImpl(x); };
-var addImpl   = null, add   = function(x){ return addImpl(x); };
-var mulImpl   = null, mul   = function(x){ return mulImpl(x); };
-var unaryImpl = null, unary = function(x){ return unaryImpl(x); };
-var powerImpl = null, power = function(x){ return powerImpl(x); };
-var atomImpl  = null, atom  = function(x){ return atomImpl(x); };
+let exprImpl: any  = null;
+const expr  = function(x){ return exprImpl(x); };
+let addImpl: any   = null;
+const add   = function(x){ return addImpl(x); };
+let mulImpl: any   = null;
+const mul   = function(x){ return mulImpl(x); };
+let unaryImpl: any = null;
+const unary = function(x){ return unaryImpl(x); };
+let powerImpl: any = null;
+const power = function(x){ return powerImpl(x); };
+let atomImpl: any  = null;
+const atom  = function(x){ return atomImpl(x); };
 
-// atom = number | var | '(' expr ')'
+// atom = number | variable | '(' expr ')'
 atomImpl = or(
     number,
     ident,

@@ -16,7 +16,7 @@ space 			> singleSpace , {singleSpace} ;
 import assert from 'node:assert';
 import {
     all, between, charExcept, charOneOf, first, optional, or, rep0, rep1, second, word
-} from '../tuco.js';
+} from '../src/tuco.ts';
 
 const opt = optional;
 
@@ -42,7 +42,7 @@ function toRightArg (v){
 	if(v === null)
 		return v;
 
-	var op = v[0];
+	const op = v[0];
 
 	op.right = v[1];
 
@@ -53,7 +53,7 @@ function toLeftArg (v){
 	if(v[1] === null)
 		return v[0];
 
-	var op = v[1];
+	const op = v[1];
 
 	op.left =  v[0];
 
@@ -63,9 +63,9 @@ function toLeftArg (v){
 const spaceConst = ' \u00A0,;\n\r\t';
 const specialConst = '"()';
 
-var shapedLogicImpl = null;
-var logicImpl = null;
-var queryImpl = null;
+let shapedLogicImpl: any = null;
+let logicImpl: any = null;
+let queryImpl: any = null;
 
 function shapedLogic(x) { return shapedLogicImpl(x); };
 function logic(x) { return logicImpl(x); };
@@ -96,7 +96,7 @@ logicImpl   = all(singleWord, opt(logicRest)).map(toLeftArg);
 queryImpl 	= between(opt(space), opt(or(shapedLogic, logic)), opt(space));
 
 function parseQuery(text){
-	var result = query(text);
+	const result = query(text);
 
 	if(result.failed)
 		return result;
@@ -124,14 +124,14 @@ function buildClauses(result){
 
 describe('query', function() {
    	it("big", function(){
-		var result = query('bamboo OR (join AND ")quted test laenin,()!" bbq) AND "" OR ncx AND pgt');
+		const result = query('bamboo OR (join AND ")quted test laenin,()!" bbq) AND "" OR ncx AND pgt');
 		
 		assert(result.rest === "");
    	});
 
 
    	it("simple", function(){
-		var result = query('x');
+		const result = query('x');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -143,7 +143,7 @@ describe('query', function() {
    	});
 
    	it("simple with spaces", function(){
-		var result = query(' x ');
+		const result = query(' x ');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -155,7 +155,7 @@ describe('query', function() {
    	});
 
    	it("simple quoted", function(){
-		var result = query('" x "');
+		const result = query('" x "');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -167,7 +167,7 @@ describe('query', function() {
    	});
 
    	it("simple parenthesed", function(){
-		var result = query(' ( x ) ');
+		const result = query(' ( x ) ');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -179,7 +179,7 @@ describe('query', function() {
    	});
 
    	it("simple parenthesed no spaces", function(){
-		var result = query('(x)');
+		const result = query('(x)');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -191,7 +191,7 @@ describe('query', function() {
    	});
 
    	it("operator AND", function(){
-		var result = query('x AND y');
+		const result = query('x AND y');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -210,7 +210,7 @@ describe('query', function() {
    	});
 
    	it("operator OR", function(){
-		var result = query('x OR y');
+		const result = query('x OR y');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -229,7 +229,7 @@ describe('query', function() {
    	});
 
    	it("implicit operator AND", function(){
-		var result = query('x  y');
+		const result = query('x  y');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -248,7 +248,7 @@ describe('query', function() {
    	});
 
    	it("empty verbatim", function(){
-		var result = query('""');
+		const result = query('""');
 		
 		assert.deepEqual(result,{
 			value: { 
@@ -260,7 +260,7 @@ describe('query', function() {
    	});
 
    	it("empty parenthesises", function(){
-		var result = query('()');
+		const result = query('()');
 		
 		assert.deepEqual(result,{
 			value: null,
@@ -271,7 +271,7 @@ describe('query', function() {
 
 describe('query errors', function(){
 	it('dangling quote', function() {
-		var result = parseQuery('"test');
+		const result = parseQuery('"test');
 
 		assert.deepEqual(result, {
 			failed:true,
@@ -281,7 +281,7 @@ describe('query errors', function(){
 	});
 
 	it('dangling parenthesis', function() {
-		var result = parseQuery('test (');
+		const result = parseQuery('test (');
 
 		assert.deepEqual(result, {
 			failed:true,
@@ -293,31 +293,31 @@ describe('query errors', function(){
 
 describe('build clauses', function(){
 	it('single word', function(){
-		var result = buildClauses(query('test').value);
+		const result = buildClauses(query('test').value);
 
 		assert.deepEqual(result, ['test']);
 	});
 
 	it('several word', function(){
-		var result = buildClauses(query('test1 test2 test3').value);
+		const result = buildClauses(query('test1 test2 test3').value);
 
 		assert.deepEqual(result.sort(), ['test1', 'test2', 'test3']);
 	});
 
 	it('several word and parenthesises', function(){
-		var result = buildClauses(query('test1 (test2 test3)').value);
+		const result = buildClauses(query('test1 (test2 test3)').value);
 
 		assert.deepEqual(result.sort(), ['test1', 'test2', 'test3']);
 	});
 
 	it('several word and parenthesises and verbatim', function(){
-		var result = buildClauses(query('test1 (test2 test3 AND "quoted string")').value);
+		const result = buildClauses(query('test1 (test2 test3 AND "quoted string")').value);
 
 		assert.deepEqual(result.sort(), ['quoted string', 'test1', 'test2', 'test3']);
 	});
 
 	it('null result gives no clauses', function(){
-		var result = buildClauses(null);
+		const result = buildClauses(null);
 
 		assert.deepEqual(result, []);
 	});

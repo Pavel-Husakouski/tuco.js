@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import {
     all, anyChar, between, chain, charExcept, charIs, charMeets, charOneOf, first,
     foldl, foldr, optional, or, rep0, rep1, second, word
-} from '../tuco.js';
+} from '../src/tuco.ts';
 
 describe('map', function() {
     it('map not null', function(){
@@ -10,11 +10,9 @@ describe('map', function() {
                     .map(function(values) {
                         return values.join('.');
                     });
-        var result = parser('firstsecondthirdrest');
+        const result = parser('firstsecondthirdrest');
         
-        assert(!result.failed);
-        assert(result.value === 'first.second.third');
-        assert(result.rest === 'rest');
+        assert.deepEqual(result, { value: 'first.second.third', rest: 'rest' });
     });
     
     it('map null', function(){
@@ -22,16 +20,16 @@ describe('map', function() {
                     .map(function(values) {
                         return values.join('.');
                     });
-        var result = parser('zerofirstsecondthird');
+        const result = parser('zerofirstsecondthird');
         
-        assert(result.failed);
+        assert('failed' in result);
     })
 });
 
 describe('alternation',function(){
     it('or implicit `word`', function(){
         const parser = or('first', 'second', 'third');
-        var result = parser('firstsecondthird');
+        const result = parser('firstsecondthird');
         
         assert.deepEqual(result,{
             value:'first',
@@ -41,102 +39,86 @@ describe('alternation',function(){
 
     it('or first not null', function(){
         const parser = or(word('first'), word('second'), word('third'));
-        var result = parser('firstsecondthird');
+        const result = parser('firstsecondthird');
         
-        assert(!result.failed);
-        assert(result.value === 'first');
-        assert(result.rest === 'secondthird');
+        assert.deepEqual(result, { value: 'first', rest: 'secondthird' });
     });
 
     it('or second not null', function(){
         const parser = or(word('first'), word('second'), word('third'));
-        var result = parser('secondfirstthird');
+        const result = parser('secondfirstthird');
         
-        assert(!result.failed);
-        assert(result.value === 'second');
-        assert(result.rest === 'firstthird');
+        assert.deepEqual(result, { value: 'second', rest: 'firstthird' });
     });
     
     it('or third not null', function(){
         const parser = or(word('first'), word('second'), word('third'));
-        var result = parser('thirdfirstsecond');
+        const result = parser('thirdfirstsecond');
         
-        assert(!result.failed);
-        assert(result.value === 'third');
-        assert(result.rest === 'firstsecond');
+        assert.deepEqual(result, { value: 'third', rest: 'firstsecond' });
     });
     
     it('or all null', function(){
         const parser = or(word('first'), word('second'), word('third'));
-        var result = parser('fourththirdfirstsecond');
+        const result = parser('fourththirdfirstsecond');
         
-        assert(result.failed);
+        assert('failed' in result);
     })
 });
 
 describe('repetition', function(){
     it('rep1 not null',function(){
         const parser = rep1(charIs('x'));
-        var result = parser('xxxxzzzz');
+        const result = parser('xxxxzzzz');
         
-        assert(!result.failed);
-        assert(result.value.length === 4);
-        assert(result.rest === 'zzzz');
+        assert.deepEqual(result, { value: ['x', 'x', 'x', 'x'], rest: 'zzzz' });
     });
     
     it('rep1 null',function(){
         const parser = rep1(charIs('x'));
-        var result = parser('');
+        const result = parser('');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
     
     it('rep1 single not null',function(){
         const parser = rep1(charIs('x'));
-        var result = parser('xy');
+        const result = parser('xy');
         
-        assert(!result.failed);
-        assert(result.value.length === 1);
-        assert(result.rest === 'y');
+        assert.deepEqual(result, { value: ['x'], rest: 'y' });
     });
 
     it('rep0 not null',function(){
         const parser = rep0(charIs('x'));
-        var result = parser('xxxxzzzz');
+        const result = parser('xxxxzzzz');
         
-        assert(!result.failed);
-        assert(result.value.length === 4);
-        assert(result.rest === 'zzzz');
+        assert.deepEqual(result, { value: ['x', 'x', 'x', 'x'], rest: 'zzzz' });
     });
     
     it('rep0 can\'t be null',function(){
         const parser = rep0(charIs('x'));
-        var result = parser('zzz');
+        const result = parser('zzz');
         
-        assert(!result.failed);
-        assert(result.value === null);
-        assert(result.rest === 'zzz');
+        assert.deepEqual(result, { value: null, rest: 'zzz' });
     });
     
     it('rep0 single not null',function(){
         const parser = rep1(charIs('x'));
-        var result = parser('xzzz');
+        const result = parser('xzzz');
         
-        assert(!result.failed);
-        assert(result.value.length === 1);
-        assert(result.rest === 'zzz');
+        assert.deepEqual(result, { value: ['x'], rest: 'zzz' });
     });
 
     it('rep1 implicit `all` result null when no match', function(){
         const parser = rep1(word('text'), word('text'));
-        var result = parser('text and etc.');
+        const result = parser('text and etc.');
         
-        assert(result.failed, result);
+        assert('failed' in result);
     });
 
     it('rep1 implicit `all` value not null when match', function(){
         const parser = rep1(word('text1'), word('text2'));
-        var result = parser('text1text2text1text2text1 and etc.');
+        const result = parser('text1text2text1text2text1 and etc.');
         
         assert.deepEqual(result, {
             value:[["text1","text2"],["text1","text2"]],
@@ -146,7 +128,7 @@ describe('repetition', function(){
 
     it('rep0 implicit `all` value null when no match', function(){
         const parser = rep0(word('text1'), word('text2'));
-        var result = parser('text1text and etc.');
+        const result = parser('text1text and etc.');
         
         assert.deepEqual(result, {
             value:null,
@@ -156,7 +138,7 @@ describe('repetition', function(){
 
     it('rep0 implicit `word` value null when no match', function(){
         const parser = rep0('text1', 'text2');
-        var result = parser('text1text and etc.');
+        const result = parser('text1text and etc.');
         
         assert.deepEqual(result, {
             value:null,
@@ -166,7 +148,7 @@ describe('repetition', function(){
 
     it('rep0 implicit `all` value not null when match', function(){
         const parser = rep0(word('text1'), word('text2'));
-        var result = parser('text1text2text1text2text1 and etc.');
+        const result = parser('text1text2text1text2text1 and etc.');
         
         assert.deepEqual(result, {
             value:[["text1","text2"],["text1","text2"]],
@@ -176,7 +158,7 @@ describe('repetition', function(){
 
     it('rep0 implicit `word`', function(){
         const parser = rep0('text1', 'text2');
-        var result = parser('text1text2text1text2text1 and etc.');
+        const result = parser('text1text2text1text2text1 and etc.');
         
         assert.deepEqual(result, {
             value:[["text1","text2"],["text1","text2"]],
@@ -189,7 +171,7 @@ describe('repetition', function(){
 describe ('option',function(){
     it('optional implicit `word`', function(){
         const parser = optional('text');
-        var result = parser('text and etc.');
+        const result = parser('text and etc.');
         
         assert.deepEqual(result,{
             value:'text',
@@ -199,102 +181,95 @@ describe ('option',function(){
 
     it('optional not null', function(){
         const parser = optional(word('text'));
-        var result = parser('text and etc.');
+        const result = parser('text and etc.');
         
-        assert(!result.failed);
-        assert(result.value === 'text');
-        assert(result.rest === ' and etc.');
+        assert.deepEqual(result, { value: 'text', rest: ' and etc.' });
     });
     
     it('optional can\'t be null', function(){
         const parser = optional(word('text'));
-        var result = parser('xxx text and etc.');
+        const result = parser('xxx text and etc.');
         
-        assert(!result.failed);
-        assert(result.value === null);
-        assert(result.rest === 'xxx text and etc.');
+        assert.deepEqual(result, { value: null, rest: 'xxx text and etc.' });
     })
 
     it('implicit `all` value null when no match', function(){
         const parser = optional(word('text'), word('text'));
-        var result = parser('text and etc.');
+        const result = parser('text and etc.');
         
-        assert(!result.failed);
-        assert(result.value === null);
-        assert(result.rest === 'text and etc.');
+        assert.deepEqual(result, { value: null, rest: 'text and etc.' });
     });
 
     it('implicit `all` value not null when match', function(){
         const parser = optional(word('text'), word('text'));
-        var result = parser('texttext and etc.');
+        const result = parser('texttext and etc.');
         
-        assert(result.value.join('') === 'texttext', result.value);
-        assert(result.rest === ' and etc.');
+        assert.deepEqual(result, { value: ['text', 'text'], rest: ' and etc.' });
     });
 });
 
 describe('charXXX', function(){
     it('charExcept not null',function(){
         const parser = charExcept("");
-        var result = parser('x123');
+        const result = parser('x123');
     
-        assert(result.value === 'x' && result.rest === '123');
+        assert.deepEqual(result, { value: 'x', rest: '123' });
     }) ;
     
     it('charExcept null',function(){
         const parser = charExcept("x");
-        var result = parser('x123');
+        const result = parser('x123');
     
-        assert(result.failed);
+        assert('failed' in result);
     });
     
     it('charOneOF not null',function(){
         const parser = charOneOf("xyz");
-        var result = parser('x123');
+        const result = parser('x123');
     
-        assert(result.value === 'x' && result.rest === '123');
+        assert.deepEqual(result, { value: 'x', rest: '123' });
     });
 
    it('charOneOF null',function(){
         const parser = charOneOf("xyz");
-        var result = parser('123');
+        const result = parser('123');
     
-        assert(result.failed);
+        assert('failed' in result);
     });
 
     it('charMeets not null',function(){
         const parser = charMeets(function(ch) { return ch === 'x'; });
-        var result = parser('xyz');
+        const result = parser('xyz');
     
-        assert(result.value === 'x' && result.rest === 'yz');
+        assert.deepEqual(result, { value: 'x', rest: 'yz' });
     });
 
     it('charMeets null',function(){
         const parser = charMeets(function(ch) { return false; });
-        var result = parser('xyz');
+        const result = parser('xyz');
     
-        assert(result.failed);
+        assert('failed' in result);
     });
     
     it('charIs("x") not null',function(){
         const parser = charIs('x');
-        var result = parser('xyz');
+        const result = parser('xyz');
     
-        assert(result.value === 'x' && result.rest === 'yz');
+        assert.deepEqual(result, { value: 'x', rest: 'yz' });
     });
     
     it('charIs("x") null',function(){
         const parser = charIs('x');
-        var result = parser('1yz');
+        const result = parser('1yz');
     
-        assert(result.failed);
+        assert('failed' in result);
     })
 });
 
 describe('all', function(){
     it('implicit `word`',function(){
         const parser = all('x','yy','x');
-        var result = parser('xyyx and etc.');
+        const result = parser('xyyx and etc.');
         
         assert.deepEqual(result, {
             value: ['x','yy', 'x'],
@@ -304,16 +279,14 @@ describe('all', function(){
 
     it('word not null',function(){
         const parser = word('text');
-        var result = parser('text and etc.');
+        const result = parser('text and etc.');
         
-        assert(!result.failed);
-        assert(result.value === 'text');
-        assert(result.rest === ' and etc.');
+        assert.deepEqual(result, { value: 'text', rest: ' and etc.' });
     });
 
     it('word not null',function(){
         const parser = word('test');
-        var result = parser('test and etc.');
+        const result = parser('test and etc.');
         
         assert.deepEqual(result,{
             value:'test',
@@ -323,30 +296,28 @@ describe('all', function(){
 
     it('word null',function(){
         const parser = word('text');
-        var result = parser('zzztext and etc.');
+        const result = parser('zzztext and etc.');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
     
     it('between not null',function(){
         const parser = between(charIs('('), charOneOf('xyz'), charIs(')'));
-        var result = parser('(x)xxx');
+        const result = parser('(x)xxx');
         
-        assert(!result.failed);
-        assert(result.value === 'x');
-        assert(result.rest === 'xxx');
+        assert.deepEqual(result, { value: 'x', rest: 'xxx' });
     });
 
     it('between null',function(){
         const parser = between(charIs('('), charOneOf('xyz'), charIs(')'));
-        var result = parser('(1)xxx');
+        const result = parser('(1)xxx');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
 
     it('between implicit `word`',function(){
         const parser = between('(', 'xyz', ')');
-        var result = parser('(xyz)xxx');
+        const result = parser('(xyz)xxx');
         
         assert.deepEqual(result, {
             value:'xyz',
@@ -356,7 +327,7 @@ describe('all', function(){
 
     it('first not null when match',function(){
         const parser = first(charOneOf('xyz'), charIs('/'));
-        var result = parser('x/rest');
+        const result = parser('x/rest');
         
         assert.deepEqual(result,{
             value:'x',
@@ -366,14 +337,14 @@ describe('all', function(){
 
     it('first is null when no match',function(){
         const parser = first(charOneOf('xyz'), charIs('/'));
-        var result = parser('k\\rest');
+        const result = parser('k\\rest');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
 
     it('second implicit `word`',function(){
         const parser = first('xyz', '/');
-        var result = parser('xyz/rest');
+        const result = parser('xyz/rest');
         
         assert.deepEqual(result,{
             value:'xyz',
@@ -384,23 +355,21 @@ describe('all', function(){
 
     it('second not null when match',function(){
         const parser = second(charIs('\\'), charOneOf('xyz'));
-        var result = parser('\\xxxx');
+        const result = parser('\\xxxx');
         
-        assert(!result.failed);
-        assert(result.value === 'x');
-        assert(result.rest === 'xxx');
+        assert.deepEqual(result, { value: 'x', rest: 'xxx' });
     });
 
     it('second is null when no match',function(){
         const parser = second(charIs('\\'), charOneOf('xyz'));
-        var result = parser('/xxxx');
+        const result = parser('/xxxx');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
 
     it('second implicit `word`',function(){
         const parser = second('\\','xyz');
-        var result = parser('\\xyzxxx');
+        const result = parser('\\xyzxxx');
         
         assert.deepEqual(result, {
             value:'xyz',
@@ -410,7 +379,7 @@ describe('all', function(){
     
     it('all not null when match',function(){
         const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        var result = parser('xyz1rest');
+        const result = parser('xyz1rest');
         
         assert.deepEqual(result,{
             value:['x','y','z','1'],
@@ -420,60 +389,60 @@ describe('all', function(){
 
     it('all first null',function(){
         const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        var result = parser('_yz1rest');
+        const result = parser('_yz1rest');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
 
     it('all second null',function(){
         const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        var result = parser('x_z1rest');
+        const result = parser('x_z1rest');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
     
     it('all third null',function(){
         const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        var result = parser('xy_1rest');
+        const result = parser('xy_1rest');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
     
     it('all fourth null',function(){
         const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        var result = parser('xyz_rest');
+        const result = parser('xyz_rest');
         
-        assert(result.failed);
+        assert('failed' in result);
     });
 
     it('all empty null',function(){
         const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        var result = parser('');
+        const result = parser('');
         
-        assert(result.failed);
+        assert('failed' in result);
     })
 });
 
 describe('anyChar', function(){
     it('value and rest are not when match', function(){
         const parser = anyChar();
-        var result = parser('123');
+        const result = parser('123');
         
-        assert(result.value === '1' && result.rest === '23' );
+        assert.deepEqual(result, { value: '1', rest: '23' });
     });
 
     it('empty string should fail', function(){
         const parser = anyChar();
-        var result = parser('');
+        const result = parser('');
 
-        assert(result.failed);
+        assert('failed' in result);
     });
 
     it('null should fail', function(){
         const parser = anyChar();
-        var result = parser(null);
+        const result = parser(null);
 
-        assert(result.failed);
+        assert('failed' in result);
     })
 });
 
@@ -485,63 +454,66 @@ describe('chain / foldl / foldr', function() {
 
     it('chain returns [head, pairs] for a chain', function(){
         const parser = chain(num, minus);
-        var result = parser('2-3-4');
+        const result = parser('2-3-4');
 
         assert.deepEqual(result, { value:[2, [['-',3], ['-',4]]], rest:'' });
     });
 
     it('chain returns [head, null] when no operator follows', function(){
         const parser = chain(num, minus);
-        var result = parser('2');
+        const result = parser('2');
 
         assert.deepEqual(result, { value:[2, null], rest:'' });
     });
 
     it('foldl builds a left-leaning AST with the default apply', function(){
         const parser = chain(num, minus).map(foldl());
-        var result = parser('2-3-4');
+        const result = parser('2-3-4');
 
-        assert.deepEqual(result.value, ['-', ['-', 2, 3], 4]);
+        assert.deepEqual(result, { value: ['-', ['-', 2, 3], 4], rest: '' });
     });
 
     it('foldr builds a right-leaning AST with the default apply', function(){
         const parser = chain(num, minus).map(foldr());
-        var result = parser('2-3-4');
+        const result = parser('2-3-4');
 
-        assert.deepEqual(result.value, ['-', 2, ['-', 3, 4]]);
+        assert.deepEqual(result, { value: ['-', 2, ['-', 3, 4]], rest: '' });
     });
 
     it('foldl folds left with a custom apply', function(){
         const parser = chain(num, minus).map(foldl(function(op, a, b){ return a - b; }));
-        var result = parser('2-3-4');
+        const result = parser('2-3-4');
 
-        assert.deepEqual(result.value, -5);
+        assert.deepEqual(result, { value: -5, rest: '' });
     });
 
     it('foldr folds right with a custom apply', function(){
         const parser = chain(num, minus).map(foldr(function(op, a, b){ return a - b; }));
-        var result = parser('2-3-4');
+        const result = parser('2-3-4');
 
-        assert.deepEqual(result.value, 3);
+        assert.deepEqual(result, { value: 3, rest: '' });
     });
 
     it('foldl/foldr return the head unchanged for a single operand', function(){
         const sub = function(op, a, b){ return a - b; };
         const foldLeft  = chain(num, minus).map(foldl(sub));
         const foldRight = chain(num, minus).map(foldr(sub));
-        var resultLeft  = foldLeft('7');
-        var resultRight = foldRight('7');
+        const resultLeft  = foldLeft('7');
+        const resultRight = foldRight('7');
 
-        assert.deepEqual(resultLeft.value, 7);
-        assert.deepEqual(resultRight.value, 7);
+        assert.deepEqual(resultLeft, { value: 7, rest: '' });
+        assert.deepEqual(resultRight, { value: 7, rest: '' });
     });
 
     it('chain validates its arguments', function(){
+        // @ts-expect-error — chain is deliberately called with one combinator
         assert.throws(function(){ chain(word('a')); }, /accepts two combinators/);
     });
 
     it('foldl/foldr validate the optional apply', function(){
+        // @ts-expect-error — foldl is deliberately given a non-function
         assert.throws(function(){ foldl('nope'); }, /optional apply function/);
+        // @ts-expect-error — foldr is deliberately given a non-function
         assert.throws(function(){ foldr('nope'); }, /optional apply function/);
     });
 });
@@ -549,29 +521,23 @@ describe('chain / foldl / foldr', function() {
 describe('errors', function(){
     it('carries the position and expected', function(){
         const parser = word('abc');
-        var result = parser('abx');
+        const result = parser('abx');
 
-        assert(result.failed);
-        assert.strictEqual(result.pos, 2);
-        assert.deepEqual(result.expected, ['"c"']);
+        assert.deepEqual(result, { failed: true, pos: 2, expected: ['"c"'] });
     });
 
     it('or keeps the furthest failure and unions expectations', function(){
         const parser = or(word('ab'), word('ax'));
-        var result = parser('az');
+        const result = parser('az');
 
-        assert(result.failed);
-        assert.strictEqual(result.pos, 1);
-        assert.deepEqual(result.expected, ['"b"', '"x"']);
+        assert.deepEqual(result, { failed: true, pos: 1, expected: ['"b"', '"x"'] });
     });
 
     it('all propagates the first failure', function(){
         const parser = all(charIs('a'), charIs('b'));
-        var result = parser('ax');
+        const result = parser('ax');
 
-        assert(result.failed);
-        assert.strictEqual(result.pos, 1);
-        assert.deepEqual(result.expected, ['"b"']);
+        assert.deepEqual(result, { failed: true, pos: 1, expected: ['"b"'] });
     });
 });
 

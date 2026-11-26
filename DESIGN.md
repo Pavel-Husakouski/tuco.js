@@ -22,55 +22,76 @@
 
 ## Стиль тестов
 
-Тесты следуют одному образцу: сначала объявляем парсер, затем запускаем его и сохраняем результат, затем проверяем.
+Тесты следуют одному образцу: сначала объявляем парсер, затем запускаем его и сохраняем результат, затем проверяем результат целиком.
 
-```js
+```ts
+import assert from 'node:assert';
+import { anyChar } from '../src/tuco.ts';
+
 it('value and rest are not when match', function(){
     const parser = anyChar();
-    var result = parser('123');
+    const result = parser('123');
 
-    assert(result.value === '1' && result.rest === '23' );
+    assert.deepEqual(result, { value: '1', rest: '23' });
 });
 ```
 
 Правила:
 
 1. **Строгое равенство** — только `===` / `!==`, никогда `==` / `!=`.
-2. **`const` для определений** — парсеры, грамматика, предикаты, хелперы и `require` присваиваются один раз, поэтому `const`:
-   ```js
+2. **`const` по умолчанию.** Парсеры, грамматика, предикаты, хелперы и импорты присваиваются один раз, поэтому объявляются через `const`:
+   ```ts
    const parser = or(word('first'), word('second'));
-   const assert = require('assert');
    const isLetter = function(c){ return /[a-zA-Z]/.test(c); };
    ```
-3. **`var result` для результата парсинга** — результат запуска парсера объявляется как `var result` (а не `const`, и не `r`):
-   ```js
-   var result = parser('firstsecondthird');
-   ```
-4. **Исключение — forward-объявления взаимной рекурсии.** Переменные вида `*Impl`, которые объявляются как `null` и позже переприсваиваются (взаимная рекурсия грамматик), остаются `var`:
-   ```js
-   var exprImpl = null, expr = function(x){ return exprImpl(x); };
+3. **`let` только для переприсваиваемых.** Переменная, чьё значение меняется позже (накопители в цикле, forward-объявления `*Impl`), объявляется через `let`; `var` не используется:
+   ```ts
+   let acc = v[0];
+   acc = apply(op, acc, right);
+
+   let exprImpl: any = null;   // forward-объявление взаимной рекурсии
    // ...
-   exprImpl = add;
+   exprImpl = add;             // обычное присваивание к уже объявленной переменной
    ```
-   Реальное присваивание при этом пишется без `var` (обычное присваивание к объявленной переменной):
-   ```js
-   var shapedLogicImpl = null;   // forward-объявление
-   // ...
-   shapedLogicImpl = all(shaped, opt(logicRest)).map(toLeftArg);   // присваивание
+   Forward-объявление из двух переменных в одной строке разделяется: `Impl`-держатель — `let`, обёртка — `const`:
+   ```ts
+   let exprImpl: any = null;
+   const expr = function(x){ return exprImpl(x); };
    ```
-   Локальные переменные хелперов (например, `var op = v[0];`) тоже остаются `var`.
+   Содержимое массива или объекта при этом менять можно (`push`, присваивание по индексу) — сама переменная остаётся `const`.
 
 ### Проверка ошибок
 
-Ошибка парсинга — это объект, а не `null`, поэтому тесты проверяют его поля:
+Результат парсинга — размеченное объединение `Result<T> = Success<T> | Fail`, поэтому к полям `.value`/`.rest`/`.pos`/`.expected` напрямую не обращаются: тест сравнивает результат целиком через `deepEqual` либо сужает тип через `'failed' in result`.
 
-```js
-const parser = word('abc');
-var result = parser('abx');
+Ошибка сравнивается целиком:
 
-assert(result.failed);
-assert.strictEqual(result.pos, 2);
-assert.deepEqual(result.expected, ['"c"']);
+```ts
+const result = word('abc')('abx');
+
+assert.deepEqual(result, { failed: true, pos: 2, expected: ['"c"'] });
+```
+
+Успех сравнивается целиком:
+
+```ts
+const result = word('text')('text and etc.');
+
+assert.deepEqual(result, { value: 'text', rest: ' and etc.' });
+```
+
+Когда нужен только факт ошибки — сужение через `'failed' in result`:
+
+```ts
+assert('failed' in result);
+```
+
+Когда из успешного результата нужно достать значение для дальнейших проверок — сужение через `if`:
+
+```ts
+const result = rulelist('x = ...');
+if ('failed' in result) throw new Error('expected success');
+// здесь result сужен до Success<any>
 ```
 
 ## Переносы строк

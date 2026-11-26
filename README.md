@@ -2,22 +2,30 @@ In memories of Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Walla
 
 ![alt text](/img/eli_wallach.jpg?raw=true "Tuco Benedicto Pacifico Juan Maria Ramirez and Eli Herschel Wallach")
 
-tuco.js
-=======
+tuco
+====
 
-Minimalist library to use with simple query grammars, built on parser combinators.
+Minimalist library to use with simple query grammars, built on parser combinators. Written in TypeScript: source lives in `src/`, compiled to `lib/`.
 
 Usage
 -----
 
-Look at the test/demo*.js for more details
+```ts
+import { or, word } from 'tuco';
+
+const parser = or(word('first'), word('second'));
+parser('firstsecond');   // { value: 'first', rest: 'second' }
+```
+
+Look at `test/demo*.ts` for more details.
 
 Development
 -----------
 
-* npm install -g gulp
 * npm install
-* gulp build
+* npm test            # mocha + tsx
+* npm run typecheck   # tsc --noEmit
+* npm run build       # tsc -> lib/ (JS + .d.ts + sourcemaps)
 
 Priorities
 ----------

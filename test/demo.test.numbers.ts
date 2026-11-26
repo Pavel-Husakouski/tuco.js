@@ -5,7 +5,7 @@
 */
 
 import assert from 'node:assert';
-import { all, charIs, charOneOf, optional, rep1 } from '../tuco.js';
+import { all, charIs, charOneOf, optional, rep1 } from '../src/tuco.ts';
 const toString = function(x){ return x.join(''); };
 
 describe('numbers', function() {
@@ -23,7 +23,7 @@ describe('numbers', function() {
         // ["+"|"-"]natNumber["."[natNumber]][("e"|"E")["+"|"-"]natNumber]
         const number = all(sign, natNumber, fraction, exp).map(toString);
         
-        var result = number('-012.12E-10zzzzz');
+        const result = number('-012.12E-10zzzzz');
         
         assert.deepEqual(result,{
             value:'-012.12E-10',
