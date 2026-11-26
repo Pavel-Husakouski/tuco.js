@@ -15,30 +15,30 @@ space 			> singleSpace , {singleSpace} ;
 
 import { match } from '@beeff/loose-match';
 import {
-    all, between, charExcept, charOneOf, first, optional, or, rep0, rep1, second, word
+    all, between, charExcept, charOneOf, first, optional, or, rep0, rep1, second
 } from '@beeff/tuco';
 
 const opt = optional;
 
-function toString(x){ 
+function toString(x: any){
 	if(x === null || typeof x === 'string')
 		return x;
 	return x.join(''); 
 }
 
-function toWord(v){
+function toWord(v: any){
 	return {kind:'word', value:toString(v)};
 }
 
-function toVerbatim(v) {
+function toVerbatim(v: any) {
 	return {kind:'verbatim', value:toString(v)};
 }
 
-function toOperator(v) {
+function toOperator(v: any) {
 	return {kind:v === null ? 'AND' : v};
 }
 
-function toRightArg (v){
+function toRightArg (v: any){
 	if(v === null)
 		return v;
 
@@ -49,7 +49,7 @@ function toRightArg (v){
 	return op; 
 }
 
-function toLeftArg (v){
+function toLeftArg (v: any){
 	if(v[1] === null)
 		return v[0];
 
@@ -67,9 +67,9 @@ let shapedLogicImpl: any = null;
 let logicImpl: any = null;
 let queryImpl: any = null;
 
-function shapedLogic(x) { return shapedLogicImpl(x); };
-function logic(x) { return logicImpl(x); };
-function query(x) { return queryImpl(x); };
+function shapedLogic(x: string | null) { return shapedLogicImpl(x); };
+function logic(x: string | null) { return logicImpl(x); };
+function query(x: string | null) { return queryImpl(x); };
 
 const special 	= rep1(charOneOf(specialConst)).map(toString);
 const space   	= rep1(charOneOf(spaceConst));
@@ -95,7 +95,7 @@ shapedLogicImpl = all(shaped, opt(logicRest)).map(toLeftArg);
 logicImpl   = all(singleWord, opt(logicRest)).map(toLeftArg);
 queryImpl 	= between(opt(space), opt(or(shapedLogic, logic)), opt(space));
 
-function parseQuery(text){
+function parseQuery(text: string){
 	const result = query(text);
 
 	if(result.failed)
@@ -109,7 +109,7 @@ function parseQuery(text){
 	return { failed:true, pos: text.length - result.rest.length, expected:['end of input'] };
 }
 
-function buildClauses(result){
+function buildClauses(result: any): any[]{
 	if(result === null)
 		return [];
 
@@ -117,7 +117,7 @@ function buildClauses(result){
 		return [result.value];
 
 	if(result.kind in {"OR":0, "AND":0})
-		return [].concat(buildClauses(result.left), buildClauses(result.right));
+		return buildClauses(result.left).concat(buildClauses(result.right));
 
 	throw new Error('wrong kind');
 }

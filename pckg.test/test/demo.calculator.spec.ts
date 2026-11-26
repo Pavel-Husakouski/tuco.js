@@ -20,24 +20,24 @@ const number = rep1(charOneOf("0123456789")).map(function(x){
     return parseInt(x.join(''));
 });
 
-const isLetter    = function(c){ return /[a-zA-Z]/.test(c); };
-const isIdentChar = function(c){ return /[a-zA-Z0-9]/.test(c); };
+const isLetter    = function(c: string){ return /[a-zA-Z]/.test(c); };
+const isIdentChar = function(c: string){ return /[a-zA-Z0-9]/.test(c); };
 const ident = all(charMeets(isLetter), rep0(charMeets(isIdentChar))).map(function(v){
     return v[0] + (v[1] === null ? '' : v[1].join(''));
 });
 
 let exprImpl: any  = null;
-const expr  = function(x){ return exprImpl(x); };
+const expr  = function(x: string | null){ return exprImpl(x); };
 let addImpl: any   = null;
-const add   = function(x){ return addImpl(x); };
+const add   = function(x: string | null){ return addImpl(x); };
 let mulImpl: any   = null;
-const mul   = function(x){ return mulImpl(x); };
+const mul   = function(x: string | null){ return mulImpl(x); };
 let unaryImpl: any = null;
-const unary = function(x){ return unaryImpl(x); };
+const unary = function(x: string | null){ return unaryImpl(x); };
 let powerImpl: any = null;
-const power = function(x){ return powerImpl(x); };
+const power = function(x: string | null){ return powerImpl(x); };
 let atomImpl: any  = null;
-const atom  = function(x){ return atomImpl(x); };
+const atom  = function(x: string | null){ return atomImpl(x); };
 
 // atom = number | variable | '(' expr ')'
 atomImpl = or(
@@ -64,7 +64,7 @@ addImpl = foldLeft(mul, or(charIs('+'), charIs('-')));
 exprImpl = add;
 
 describe('calculator', function() {
-    function parse(s) { return expr(s); }
+    function parse(s: string) { return expr(s); }
 
     it('chains subtraction left-associatively', function(){
         match(parse('2-3-4').value).with(['-', ['-', 2, 3], 4]);

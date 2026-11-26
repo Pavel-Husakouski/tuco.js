@@ -6,7 +6,7 @@
 
 import { match } from '@beeff/loose-match';
 import { all, charIs, charOneOf, optional, rep1 } from '@beeff/tuco';
-const toString = function(x){ return x.join(''); };
+const toString = function(x: any){ return x.join(''); };
 
 describe('numbers', function() {
     it('numbers not null', function(){

@@ -20,8 +20,8 @@ Deliberate simplifications (the parser accepts a little less than strict RFC 523
 
 import { match, predicate } from '@beeff/loose-match';
 import {
-    all, between, charExcept, charIs, charMeets, charOneOf, first,
-    optional, or, rep0, rep1, second, word
+  all, between, charExcept, charIs, charMeets, charOneOf, first,
+  optional, or, Parser, rep0, rep1, second, word
 } from '@beeff/tuco';
 
 // Truthy check, used to assert that a rule name is present in the byName map.
@@ -94,9 +94,9 @@ prose-val      =  "<" *(%x20-3D / %x3F-7E) ">"
 `;
 
 // ---- basic character classes ----
-const isAlpha  = function(c){ return /[A-Za-z]/.test(c); };
-const isDigit  = function(c){ return /[0-9]/.test(c); };
-const isHexdig = function(c){ return /[0-9A-Fa-f]/.test(c); };
+const isAlpha  = function(c: string){ return /[A-Za-z]/.test(c); };
+const isDigit  = function(c: string){ return /[0-9]/.test(c); };
+const isHexdig = function(c: string){ return /[0-9A-Fa-f]/.test(c); };
 
 const ALPHA  = charMeets(isAlpha, 'ALPHA');
 const DIGIT  = charMeets(isDigit, 'DIGIT');
@@ -114,9 +114,9 @@ const comment = all(charIs(';'), rep0(charExcept('\n')), CRLF);
 const ws = rep0(WSP);                          // inline: spaces and tabs only
 const spacing = rep0(or(WSP, CRLF, comment));  // full: spaces + line breaks + comments
 
-function lex(p){ return first(p, ws); }   // parse p and skip trailing spaces/tabs
+function lex(p: Parser<any>){ return first(p, ws); }   // parse p and skip trailing spaces/tabs
 
-function join(xs){ return xs === null ? '' : xs.join(''); }
+function join(xs: string[] | null){ return xs === null ? '' : xs.join(''); }
 
 // ---- atomic tokens (each with trailing spacing) ----
 
@@ -133,15 +133,15 @@ const proseVal = lex(between(charIs('<'), rep0(charExcept('>\n')).map(join), cha
     .map(function(s){ return { kind:'prose', value: s }; });
 
 // num-val = "%" (bin-val / dec-val / hex-val)
-function numBody(digit){
+function numBody(digit: Parser<string>){
     const d = rep1(digit).map(join);              // 1*DIGIT
     const range = second(charIs('-'), d);         // "-" 1*DIGIT
     const seq = rep1(second(charIs('.'), d));     // 1*("." 1*DIGIT)
     return all(d, optional(or(range, seq)));
 }
 
-function toNum(base){
-    return function(body){
+function toNum(base: string){
+    return function(body: any){
         // body = [first, tail], tail = string (range) | array (seq) | null
         const first = body[0], tail = body[1];
         let values, range = false;
@@ -166,17 +166,17 @@ const definedAs = lex(or(word('=/'), word('=')));
 
 // ---- mutually recursive rules (forward declarations) ----
 let alternationImpl: any = null;
-const alternation   = function(x){ return alternationImpl(x); };
+const alternation   = function(x: string | null){ return alternationImpl(x); };
 let concatenationImpl: any = null;
-const concatenation = function(x){ return concatenationImpl(x); };
+const concatenation = function(x: string | null){ return concatenationImpl(x); };
 let repetitionImpl: any = null;
-const repetition    = function(x){ return repetitionImpl(x); };
+const repetition    = function(x: string | null){ return repetitionImpl(x); };
 let elementImpl: any = null;
-const element       = function(x){ return elementImpl(x); };
+const element       = function(x: string | null){ return elementImpl(x); };
 let groupImpl: any = null;
-const group         = function(x){ return groupImpl(x); };
+const group         = function(x: string | null){ return groupImpl(x); };
 let optionImpl: any = null;
-const option        = function(x){ return optionImpl(x); };
+const option        = function(x: string | null){ return optionImpl(x); };
 
 // repeat = 1*DIGIT / (*DIGIT "*" *DIGIT)
 const repeat = or(
@@ -228,9 +228,9 @@ const rule = all(rulename, definedAs, alternation, or(comment, CRLF))
 const rulelist = first(rep1(second(spacing, rule)), spacing);
 
 // ---- tests ----
-function byName(rules){
+function byName(rules: any[]){
     const map: any = {};
-    rules.forEach(function(r){ map[r.name] = r; });
+    rules.forEach(function(r: any){ map[r.name] = r; });
     return map;
 }
 
@@ -256,7 +256,7 @@ describe('abnf (meta-demo)', function(){
     it('parses CRLF as the concatenation CR LF', function(){
         const map = byName(rules);
         const crlf = map.CRLF.alt[0];
-        match(crlf.map(function(r){ return r.el; })).with([
+        match(crlf.map(function(r: any){ return r.el; })).with([
             { kind:'rulename', name:'CR' },
             { kind:'rulename', name:'LF' }
         ]);
@@ -277,6 +277,6 @@ describe('abnf (meta-demo)', function(){
         const result = rulelist('x = (a / b) [c] <free text>\n');
         if ('failed' in result) throw new Error('expected success');
         const el = result.value[0].alt[0];
-        match([result.rest, el.map(function(r){ return r.el.kind; })]).with(['', ['group', 'option', 'prose']]);
+        match([result.rest, el.map(function(r: any){ return r.el.kind; })]).with(['', ['group', 'option', 'prose']]);
     });
 });

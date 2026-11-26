@@ -1,7 +1,7 @@
 import { match } from '@beeff/loose-match';
-import { all, charIs, optional } from '@beeff/tuco';
+import { all, charIs, optional, Parser } from '@beeff/tuco';
 
-function toString(x){ 
+function toString(x: any){
     if(x === null || typeof x === 'string')
         return x;
     return x.join(''); 
@@ -10,9 +10,9 @@ function toString(x){
 describe('recursive', function() {
 
     it("S = '(', [S], ')', [S]", function(){
-        const sImpl = all(charIs('('), optional(s).map(toString), charIs(')'), optional(s).map(toString)).map(toString);
+        const sImpl: Parser<any> = all(charIs('('), optional(s).map(toString), charIs(')'), optional(s).map(toString)).map(toString);
 
-        function s(x) { return sImpl(x); };
+        function s(x: string | null) { return sImpl(x); };
 
         const inputs = [
             '()',

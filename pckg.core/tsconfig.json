@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "es2022",

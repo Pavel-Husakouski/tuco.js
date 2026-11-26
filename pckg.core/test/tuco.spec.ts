@@ -5,7 +5,7 @@ import {
 } from '../src/index.js';
 
 // Returns the error thrown by fn, or null when it does not throw.
-function thrown(fn){
+function thrown(fn: Function){
     try { fn(); return null; }
     catch (e) { return e; }
 }
