@@ -1,28 +1,28 @@
-# DESIGN.md — дизайн кода
+# DESIGN.md — code design
 
-## Модель парсера
+## Parser model
 
-Парсер — это функция `rest -> результат`.
+A parser is a function `rest -> result`.
 
-- Успех: `{ value, rest }` — распарсенное значение и остаток входной строки.
-- Ошибка: `{ failed: true, pos, expected }` — позиция, где парсинг остановился, и список ожидаемых элементов (`expected` — массив строк).
+- Success: `{ value, rest }` — the parsed value and the remaining input string.
+- Failure: `{ failed: true, pos, expected }` — the position where parsing stopped and the list of expected items (`expected` is an array of strings).
 
-Внутри парсинг работает с курсором `{ str, pos }` (без копирования подстрок), а наружу остаток отдаётся как строка через `__expose`/`__materialize`.
+Internally parsing works with a cursor `{ str, pos }` (no substring copying), while the remaining input is returned as a string via `__expose`/`__materialize`.
 
-## Форма результата `optional` / `rep1` / `rep0`
+## The shape of `optional` / `rep1` / `rep0`
 
-`__all` с одним комбинатором возвращает его без обёртки, с двумя и более — собирает результаты в массив. Поэтому `value` зависит от арности:
+`__all` with a single combinator returns it unwrapped; with two or more it collects the results into an array. Hence `value` depends on arity:
 
-- `optional(a)` → скаляр от `a`
+- `optional(a)` → the scalar from `a`
 - `optional(a, b)` → `[valueA, valueB]`
-- `rep1(a)` → плоский `[va, va, ...]`
-- `rep1(a, b)` → список пар `[[va, vb], ...]`
+- `rep1(a)` → a flat `[va, va, ...]`
+- `rep1(a, b)` → a list of pairs `[[va, vb], ...]`
 
-Осознанная асимметрия: одиночный случай отдаёт чистый скаляр, а не лишнюю вложенность. Унификация (всегда массив) дала бы единообразие, но принесла бы `[[x]]`-шум в одиночном случае.
+A deliberate asymmetry: the single case yields a plain scalar rather than extra nesting. Unifying (always an array) would be more regular, but would bring `[[x]]` noise to the single case.
 
-## Стиль тестов
+## Test style
 
-Тесты следуют одному образцу: сначала объявляем парсер, затем запускаем его и сохраняем результат, затем проверяем результат целиком.
+Tests follow one pattern: first declare the parser, then run it and save the result, then check the result as a whole.
 
 ```ts
 import assert from 'node:assert';
@@ -36,35 +36,35 @@ it('value and rest are not when match', function(){
 });
 ```
 
-Правила:
+Rules:
 
-1. **Строгое равенство** — только `===` / `!==`, никогда `==` / `!=`.
-2. **`const` по умолчанию.** Парсеры, грамматика, предикаты, хелперы и импорты присваиваются один раз, поэтому объявляются через `const`:
+1. **Strict equality** — only `===` / `!==`, never `==` / `!=`.
+2. **`const` by default.** Parsers, grammars, predicates, helpers and imports are assigned once, so they are declared with `const`:
    ```ts
    const parser = or(word('first'), word('second'));
    const isLetter = function(c){ return /[a-zA-Z]/.test(c); };
    ```
-3. **`let` только для переприсваиваемых.** Переменная, чьё значение меняется позже (накопители в цикле, forward-объявления `*Impl`), объявляется через `let`; `var` не используется:
+3. **`let` only for reassignable values.** A variable whose value changes later (accumulators in loops, `*Impl` forward declarations) is declared with `let`; `var` is not used:
    ```ts
    let acc = v[0];
    acc = apply(op, acc, right);
 
-   let exprImpl: any = null;   // forward-объявление взаимной рекурсии
+   let exprImpl: any = null;   // forward declaration of mutual recursion
    // ...
-   exprImpl = add;             // обычное присваивание к уже объявленной переменной
+   exprImpl = add;             // ordinary assignment to an already-declared variable
    ```
-   Forward-объявление из двух переменных в одной строке разделяется: `Impl`-держатель — `let`, обёртка — `const`:
+   A forward declaration of two variables on one line is split: the `Impl` holder is `let`, the wrapper is `const`:
    ```ts
    let exprImpl: any = null;
    const expr = function(x){ return exprImpl(x); };
    ```
-   Содержимое массива или объекта при этом менять можно (`push`, присваивание по индексу) — сама переменная остаётся `const`.
+   The contents of an array or object may still be mutated (`push`, assignment by index) — the variable itself stays `const`.
 
-### Проверка ошибок
+### Checking errors
 
-Результат парсинга — размеченное объединение `Result<T> = Success<T> | Fail`, поэтому к полям `.value`/`.rest`/`.pos`/`.expected` напрямую не обращаются: тест сравнивает результат целиком через `deepEqual` либо сужает тип через `'failed' in result`.
+The parse result is a tagged union `Result<T> = Success<T> | Fail`, so `.value`/`.rest`/`.pos`/`.expected` are never accessed directly: a test compares the result as a whole via `deepEqual`, or narrows the type via `'failed' in result`.
 
-Ошибка сравнивается целиком:
+A failure is compared as a whole:
 
 ```ts
 const result = word('abc')('abx');
@@ -72,7 +72,7 @@ const result = word('abc')('abx');
 assert.deepEqual(result, { failed: true, pos: 2, expected: ['"c"'] });
 ```
 
-Успех сравнивается целиком:
+A success is compared as a whole:
 
 ```ts
 const result = word('text')('text and etc.');
@@ -80,20 +80,20 @@ const result = word('text')('text and etc.');
 assert.deepEqual(result, { value: 'text', rest: ' and etc.' });
 ```
 
-Когда нужен только факт ошибки — сужение через `'failed' in result`:
+When only the fact of failure is needed — narrow via `'failed' in result`:
 
 ```ts
 assert('failed' in result);
 ```
 
-Когда из успешного результата нужно достать значение для дальнейших проверок — сужение через `if`:
+When a value must be extracted from a successful result for further checks — narrow via `if`:
 
 ```ts
 const result = rulelist('x = ...');
 if ('failed' in result) throw new Error('expected success');
-// здесь result сужен до Success<any>
+// result is narrowed to Success<any> here
 ```
 
-## Переносы строк
+## Line endings
 
-В тестах встречаются файлы с CRLF и LF, с пробелами и табами. При правке файла его переводы строк и отступы сохраняются как есть.
+Tests contain files with CRLF and LF, with spaces and tabs. When editing a file, its line endings and indentation are preserved as-is.

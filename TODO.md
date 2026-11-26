@@ -1,113 +1,114 @@
-# TODO — баги и доработки
+# TODO — bugs and improvements
 
-Результат ревью от 25.11.2026. Все пункты проверены на живом коде (node v26.12.0, тест-сьют: 74 passing).
+Review results from 25.11.2026. All items verified against the live code (node v26.12.0, test suite: 74 passing).
 
 ---
 
-- [x] 32 [docs] Перевести оставшиеся русские комментарии на английский: `test/demo.abnf.ts` (шапка, inline, `;`-комментарии внутри `source`), `test/demo.calculator.test.ts` (шапка + inline), `test/demo.query.test.ts` (блок приоритета op0/op1); `src/` уже английский; `DESIGN.md`/`TODO.md`/`CLAUDE.md` — документация/бэклог/инструкции, не трогать
-- [x] 31 [breaking] Заменить `chain`/`foldl`/`foldr` на `foldLeft`/`foldRight` (chain+fold в один шаг, без `[head, pairs]` наружу); `chain`/`foldl`/`foldr` — во внутренние `__*`; обновить демо/тесты и default-экспорт; два оверлоада (дефолт-дерево → `Parser<any>`, кастомный `apply` → `Parser<A>`)
-- [x] 30 [types] Типизировать `foldl`/`foldr` (вариант 1): вход `(value: [V, [P, V][]]) => any`; `apply` с `op: P`, `left`/`right` по смыслу (операнд `V` / аккумулятор `any`); результат остаётся `any`; дефолты `V = any`, `P = any`
-- [x] 29 [types] Убрать `Parser<any>` через variadic-tuple inference (без оверлоадов): `Combinator<A>` + хелперы `ValueOf`/`ValuesOf`/`ScalarOrTuple`/`RepValue`; по одной generic-сигнатуре на комбинатор (`all`/`first`/`second`/`between`/`rep1`/`rep0`/`optional`/`or`/`chain`); тела не менять (`__expose<any>` уже совместим — сигнатуры-only); `char*`/`word` не трогать — уже `Parser<string>`
-- [x] 28 [docs] Компактные JSDoc-комментарии 17 публичных функций `src/tuco.ts` (на английском); перевести русский комментарий `__all` (асимметрия арности) на английский
-- [x] 27 [verify] `npm run typecheck` (чисто), `npm test` (107 passing), `npm run build` → `lib/`, sanity-import `lib/tuco.js`
-- [x] 26 [docs] `README.md`: убрать `gulp`, описать `npm install`/`npm test`/`npm run build`/`npm run typecheck`
-- [x] 25 [var] `var` → `const`/`let` в `src/` и `test/`; обновить `DESIGN.md` (стиль `var` → `const`/`let`, пример assert → `deepEqual`)
-- [x] 24 [tests] `test/*.js` → `test/*.ts`: импорт `../src/tuco.ts`; assert через `deepEqual`/`'failed' in r`; forward-decls `: any`; `.mocharc.cjs` → `test/*.ts`
-- [x] 23 [lib] `tuco.js` → `src/tuco.ts`: типы `Cursor`/`Fail`/`Success`/`Result`/`Parser`, rest-параметры вместо `arguments`, type-only экспорт типов, публичный API без изменений (default-объект + 17 named)
+- [x] 33 [docs] Translate `.md` files to English (`DESIGN.md`, `TODO.md`, `CLAUDE.md`; `README.md` was already English) and document the language rule + `TODO.md` workflow in `CLAUDE.md`
+- [x] 32 [docs] Translate the remaining Russian comments to English: `test/demo.abnf.ts` (header, inline, `;`-comments inside `source`), `test/demo.calculator.test.ts` (header + inline), `test/demo.query.test.ts` (op0/op1 precedence block); `src/` is already English; `DESIGN.md`/`TODO.md`/`CLAUDE.md` — docs/backlog/instructions, untouched
+- [x] 31 [breaking] Replace `chain`/`foldl`/`foldr` with `foldLeft`/`foldRight` (chain+fold in one step, no `[head, pairs]` leak); `chain`/`foldl`/`foldr` become internal `__*`; update demos/tests and the default export; two overloads (default tree → `Parser<any>`, custom `apply` → `Parser<A>`)
+- [x] 30 [types] Type `foldl`/`foldr` (option 1): input `(value: [V, [P, V][]]) => any`; `apply` with `op: P`, `left`/`right` by meaning (operand `V` / accumulator `any`); the result stays `any`; defaults `V = any`, `P = any`
+- [x] 29 [types] Remove `Parser<any>` via variadic-tuple inference (no overloads): `Combinator<A>` + helpers `ValueOf`/`ValuesOf`/`ScalarOrTuple`/`RepValue`; one generic signature per combinator (`all`/`first`/`second`/`between`/`rep1`/`rep0`/`optional`/`or`/`chain`); leave the bodies unchanged (`__expose<any>` is already compatible — signatures only); leave `char*`/`word` — already `Parser<string>`
+- [x] 28 [docs] Compact JSDoc comments for the 17 public functions of `src/tuco.ts` (in English); translate the Russian `__all` comment (arity asymmetry) to English
+- [x] 27 [verify] `npm run typecheck` (clean), `npm test` (107 passing), `npm run build` → `lib/`, sanity-import `lib/tuco.js`
+- [x] 26 [docs] `README.md`: remove `gulp`, describe `npm install`/`npm test`/`npm run build`/`npm run typecheck`
+- [x] 25 [var] `var` → `const`/`let` in `src/` and `test/`; update `DESIGN.md` (style `var` → `const`/`let`, assert example → `deepEqual`)
+- [x] 24 [tests] `test/*.js` → `test/*.ts`: import `../src/tuco.ts`; assert via `deepEqual`/`'failed' in r`; forward decls `: any`; `.mocharc.cjs` → `test/*.ts`
+- [x] 23 [lib] `tuco.js` → `src/tuco.ts`: types `Cursor`/`Fail`/`Success`/`Result`/`Parser`, rest parameters instead of `arguments`, type-only export of types, public API unchanged (default object + 17 named)
 - [x] 22 [setup] Toolchain: devDeps `typescript@7` + `tsx` + `@types/node` + `@types/mocha`; `tsconfig.json` + `tsconfig.build.json`; `package.json` (`main`/`types`/`files`/scripts); `.gitignore` + `lib`
 
-- [x] 21 [bug] Унарный минус связывается сильнее `^` (нужно слабее)
-  - Где: `test/demo.calculator-2.test.js` — `atom = ... | '-' atom`.
-  - Следствие: `-2^2` парсился как `(-2)^2`, а конвенция — `-(2^2)`.
-  - Фикс: убрать `'-' atom` из `atom`, вставить уровень `unary = '-' unary | power` между `mul` и `power`.
+- [x] 21 [bug] Unary minus binds tighter than `^` (should be looser)
+  - Where: `test/demo.calculator-2.test.js` — `atom = ... | '-' atom`.
+  - Effect: `-2^2` parsed as `(-2)^2`, but the convention is `-(2^2)`.
+  - Fix: remove `'-' atom` from `atom`, insert a `unary = '-' unary | power` level between `mul` and `power`.
 
-- [x] 20 [feature] `chain` / `foldl` / `foldr` — свёртка цепочек операторов
-  - Где: `tuco.js` (экспорт `chain`, `foldl`, `foldr`), тесты `test/tuco.test.js`.
-  - `chain(operand, operator)` = `all(operand, rep0(all(operator, operand)))`, возвращает `[head, pairs]`.
-  - `foldl(apply?)` / `foldr(apply?)` сворачивают пары влево/вправо; дефолтный `apply` — `(op, a, b) => [op, a, b]`.
-  - Даёт левую (`2-3-4`) и правую (`2^3^2`) ассоциативность без левой рекурсии.
+- [x] 20 [feature] `chain` / `foldl` / `foldr` — folding operator chains
+  - Where: `tuco.js` (exports `chain`, `foldl`, `foldr`), tests `test/tuco.test.js`.
+  - `chain(operand, operator)` = `all(operand, rep0(all(operator, operand)))`, returns `[head, pairs]`.
+  - `foldl(apply?)` / `foldr(apply?)` fold the pairs left/right; the default `apply` is `(op, a, b) => [op, a, b]`.
+  - Gives left (`2-3-4`) and right (`2^3^2`) associativity without left recursion.
 
-- [x] 19 [test] Регрессионные тесты на найденные баги
-  - Сейчас сьют зелёный (74 passing), но баги 1–6 тестами не покрыты.
-  - Добавить: `word('')` (expect при построении), `rep1()/rep0()/optional()` без аргументов, `2-3-4` для ассоциативности, `buildClauses(null)`, `deepEqual` вместо `assert(r, {...})`.
+- [x] 19 [test] Regression tests for the bugs found
+  - The suite is green now (74 passing), but bugs 1–6 are not covered by tests.
+  - Add: `word('')` (expect at construction), `rep1()/rep0()/optional()` with no arguments, `2-3-4` for associativity, `buildClauses(null)`, `deepEqual` instead of `assert(r, {...})`.
 
-- [x] 18 [test] `demo.calculator.test.js` не тестирует
-  - `assert` импортирован, но не используется — только `console.log` AST. Нет ни одного утверждения (mocha видит пустой файл).
-  - Фикс: добавить asserts (и заодно поймать пункт 4).
+- [x] 18 [test] `demo.calculator.test.js` doesn't test
+  - `assert` is imported but unused — only `console.log` of the AST. Not a single assertion (mocha sees an empty file).
+  - Fix: add asserts (and catch item 4 along the way).
 
-- [x] 17 [improvement] Рассогласование метаданных
-  - npm-имя `tuco` vs bower-имя `tuco.js` (`package.json:2`, `bower.json:2`);
-  - URL лицензии → `hollander/tuco.js` (`package.json:23`), bower homepage → `Hollander/tuco.js` (`bower.json:4`), repository → `Pavel-Husakouski/tuco.js` (`package.json:7`).
-  - Фикс: унифицировать на один аккаунт и одно имя.
+- [x] 17 [improvement] Metadata inconsistency
+  - npm name `tuco` vs bower name `tuco.js` (`package.json:2`, `bower.json:2`);
+  - license URL → `hollander/tuco.js` (`package.json:23`), bower homepage → `Hollander/tuco.js` (`bower.json:4`), repository → `Pavel-Husakouski/tuco.js` (`package.json:7`).
+  - Fix: unify on one account and one name.
 
-- [x] 16 [improvement] gulp-таск называется `build`, а запускает тесты
-  - Где: `gulpfile.js:4`.
-  - Фикс: переименовать в `test`/`default`; добавить `"scripts": {"test": "gulp build"}` в package.json.
+- [x] 16 [improvement] The gulp task is named `build`, but runs tests
+  - Where: `gulpfile.js:4`.
+  - Fix: rename to `test`/`default`; add `"scripts": {"test": "gulp build"}` to package.json.
 
-- [x] 15 [design] `demo.abnf.js` — ABNF вместо EBNF
-  - Переименован `test/demo.ebnf.js` → `test/demo.abnf.js`; спецификация переписана в ABNF (RFC 5234).
-  - Мета-демо (распарсить этот ABNF самим tuco) — не входит в пункт, остаётся идеей на будущее.
+- [x] 15 [design] `demo.abnf.js` — ABNF instead of EBNF
+  - Renamed `test/demo.ebnf.js` → `test/demo.abnf.js`; the spec was rewritten in ABNF (RFC 5234).
+  - The meta-demo (parsing this ABNF with tuco itself) is not part of the item — it stays a future idea.
 
-- [x] 14 [design] Трюк с двумя операторами `Op0`/`Op1` в query-грамматике
-  - Где: `test/demo.query.test.js`.
-  - `AND` перед скобкой без пробела связывается как shaped, перед словом — иначе. Хитрый механизм приоритета, из кода не читается — нужен комментарий с объяснением.
+- [x] 14 [design] The two-operator `Op0`/`Op1` trick in the query grammar
+  - Where: `test/demo.query.test.js`.
+  - `AND` before a parenthesis without a space binds as shaped, before a word otherwise. A subtle precedence mechanism that doesn't read from the code — needs an explanatory comment.
 
-- [x] 13 [design] `nsImport` через `eval`
-  - Удалён: библиотека переведена на ESM (`"type": "module"`), тесты используют именованные импорты.
+- [x] 13 [design] `nsImport` via `eval`
+  - Removed: the library moved to ESM (`"type": "module"`), tests use named imports.
 
-- [x] 12 [design] Асимметрия `optional(a)` vs `optional(a, b)`
-  - Задокументировано в `DESIGN.md` и комментарием в `__all`.
+- [x] 12 [design] The `optional(a)` vs `optional(a, b)` asymmetry
+  - Documented in `DESIGN.md` and by a comment in `__all`.
 
-- [x] 11 [design] `rep1` строит массив через concat + slice
-  - Заменено на прямой код: `[v].concat(x == null ? [] : x)`.
+- [x] 11 [design] `rep1` builds its array via concat + slice
+  - Replaced with direct code: `[v].concat(x == null ? [] : x)`.
 
-- [x] 10 [design] `parseWithRestore` хрупок
-  - Где: `test/demo.query.test.js`.
-  - Если `parser(text)` вернёт `null` — упадёт на `result.rest`. Сейчас спасает только то, что `query` никогда не возвращает `null` (все части под `optional`) — это неочевидно, стоит закомментировать.
+- [x] 10 [design] `parseWithRestore` is fragile
+  - Where: `test/demo.query.test.js`.
+  - If `parser(text)` returns `null` — it crashes on `result.rest`. It only survives now because `query` never returns `null` (all parts are under `optional`) — that's non-obvious and worth a comment.
 
-- [x] 9 [design] `null` как ошибка теряет позицию и ожидания
-  - Нельзя сказать, *где* парсинг упал и *что* ожидалось. Из-за этого в query-демо появился хак `parseWithRestore` (переписывает вход, заменяя «плохой» символ на пробел).
-  - Вариант: возвращать `{expected, pos}` или failure-объект вместо `null` — уберёт необходимость в костыле.
+- [x] 9 [design] `null` as an error loses position and expectations
+  - You can't tell *where* parsing stopped and *what* was expected. That's why the query demo grew the `parseWithRestore` hack (rewrites the input, replacing the "bad" character with a space).
+  - Option: return `{expected, pos}` or a failure object instead of `null` — removes the need for the workaround.
 
-- [x] 8 [design] O(n²) на слайсах
-  - Где: `tuco.js:96-97` — `__anyChar` делает `rest.slice(1)` на каждый символ, каждый раз копируя остаток строки.
-  - Для query-строк незаметно, для длинных текстов — больно.
-  - Вариант: внутренний курсор `{str, pos}` при сохранении внешнего API.
+- [x] 8 [design] O(n²) on slices
+  - Where: `tuco.js:96-97` — `__anyChar` does `rest.slice(1)` per character, copying the rest of the string each time.
+  - Unnoticeable for query strings, painful for long texts.
+  - Option: an internal cursor `{str, pos}` while keeping the external API.
 
-- [x] 7 [design] `Function.prototype.map` — глобальный патч прототипа
-  - Где: `tuco.js:35`.
-  - Любая функция в приложении получает `.map`, свойство к тому же enumerable. Идея «парсер = функция → можно мапить» — хорошая, но реализация рискованная.
-  - Вариант: обычная функция `map(parser, f)` + сохранить `.map` как сахар; или сделать свойство non-enumerable.
+- [x] 7 [design] `Function.prototype.map` — a global prototype patch
+  - Where: `tuco.js:35`.
+  - Any function in the app gains `.map`, and an enumerable one at that. The idea "parser = function → mappable" is good, but the implementation is risky.
+  - Option: a plain `map(parser, f)` function + keep `.map` as sugar; or make the property non-enumerable.
 
-- [x] 6 [bug] `assert(r, {...})` вместо `assert.deepEqual`
-  - Где: `test/tuco.test.js:420` (тест «all not null when match»).
-  - Следствие: второй аргумент `assert` — это *сообщение*, а не ожидание: значения не проверяются вообще, тест проходит «по удаче».
-  - Фикс: `assert.deepEqual(r, { value:['x','y','z','1'], rest:'rest' });`.
+- [x] 6 [bug] `assert(r, {...})` instead of `assert.deepEqual`
+  - Where: `test/tuco.test.js:420` (the "all not null when match" test).
+  - Effect: the second `assert` argument is a *message*, not an expectation: values are never checked, the test passes "by luck".
+  - Fix: `assert.deepEqual(r, { value:['x','y','z','1'], rest:'rest' });`.
 
-- [x] 5 [bug] `!result == null` — мёртвый+ guard из-за приоритета операторов
-  - Где: `test/demo.query.test.js:110` в `buildClauses`.
-  - Следствие: `(!result) == null` — всегда `false`, ранний выход никогда не срабатывает; при `null` упадёт на `result.kind`.
-  - Фикс: `if(result == null) return [];`.
+- [x] 5 [bug] `!result == null` — a dead guard due to operator precedence
+  - Where: `test/demo.query.test.js:110` in `buildClauses`.
+  - Effect: `(!result) == null` is always `false`, the early exit never fires; on `null` it crashes on `result.kind`.
+  - Fix: `if(result == null) return [];`.
 
-- [x] 4 [bug] Калькулятор: правая ассоциативность у `-` и `/`
-  - Где: `test/demo.calculator.test.js` — `expr_tail > ["+" factor expr_tail | "-" factor expr_tail]` (праворекурсивный хвост).
-  - Следствие: `2-3-4` парсится как `2-(3-4)`, а не `(2-3)-4`. Для `+`/`*` неважно, для `-`/`/` — неверная семантика. Не ловится, потому что демо только печатает AST и не вычисляет.
-  - Проверено: `expr('2-3-4')` → `[2, ["-", 3, ["-", 4]]]`.
-  - Фикс: левая ассоциативность (аккумулятор/fold в хвосте) + вычисление в демо, чтобы тест ловил.
+- [x] 4 [bug] Calculator: right associativity for `-` and `/`
+  - Where: `test/demo.calculator.test.js` — `expr_tail > ["+" factor expr_tail | "-" factor expr_tail]` (a right-recursive tail).
+  - Effect: `2-3-4` parses as `2-(3-4)`, not `(2-3)-4`. Irrelevant for `+`/`*`, wrong semantics for `-`/`/`. Not caught because the demo only prints the AST and doesn't evaluate.
+  - Verified: `expr('2-3-4')` → `[2, ["-", 3, ["-", 4]]]`.
+  - Fix: left associativity (accumulator/fold in the tail) + evaluation in the demo so the test catches it.
 
-- [x] 3 [bug] `rep1()` / `rep0()` / `optional()` без аргументов
-  - Где: `tuco.js:201-206`, `tuco.js:224-230`, `tuco.js:232-244` — проверки длины нет (в отличие от `all()` и `or()`, где она есть); `__areCombinators([])` возвращает `true`, потому что `[].every(...)` на пустом массиве — истина.
-  - Следствие: тот же TypeError через `__all([])`.
-  - Проверено: `tuco.rep1()('a')`, `tuco.optional()('a')` → TypeError.
-  - Фикс: добавить `args.length >= 1` в `__expect`.
+- [x] 3 [bug] `rep1()` / `rep0()` / `optional()` with no arguments
+  - Where: `tuco.js:201-206`, `tuco.js:224-230`, `tuco.js:232-244` — there's no length check (unlike `all()` and `or()`, which have one); `__areCombinators([])` returns `true`, because `[].every(...)` on an empty array is truthy.
+  - Effect: the same TypeError via `__all([])`.
+  - Verified: `tuco.rep1()('a')`, `tuco.optional()('a')` → TypeError.
+  - Fix: add `args.length >= 1` to `__expect`.
 
-- [x] 2 [bug] `word('')` создаёт сломанный парсер
-  - Где: `tuco.js:190-199` — `__expect` проверяет только `__isString`, хотя сообщение обещает «non-empty string».
-  - Следствие: `''.split('')` → `[]`, `__all([])` возвращает парсер, который при вызове кидает `TypeError: Cannot read properties of undefined (reading 'rest')` (`tuco.js:168`). Падает не при построении, а в момент парсинга.
-  - Проверено: `tuco.word('')('a')` → TypeError.
-  - Фикс: `__expect(__isString(text) && text.length > 0, ...)`.
+- [x] 2 [bug] `word('')` builds a broken parser
+  - Where: `tuco.js:190-199` — `__expect` only checks `__isString`, though the message promises "non-empty string".
+  - Effect: `''.split('')` → `[]`, `__all([])` returns a parser that throws `TypeError: Cannot read properties of undefined (reading 'rest')` when called (`tuco.js:168`). It fails at parse time, not at construction.
+  - Verified: `tuco.word('')('a')` → TypeError.
+  - Fix: `__expect(__isString(text) && text.length > 0, ...)`.
 
-- [x] 1 [bug] `package.json` — невалидный JSON
-  - Где: `package.json:11` — висящая запятая после `"name": "Pavel Husakouski",`
-  - Следствие: `npm install` падает при парсинге; даже `mocha` не может стартовать из репозитория (`ERR_MOCHA_UNPARSABLE_FILE`), нужен флаг `--no-package`.
-  - Фикс: убрать запятую. Заодно: `"licenses"` → `"license": "MIT"` (SPDX), `"tags"` → `"keywords"`, добавить `"scripts": {"test": "gulp build"}`.
+- [x] 1 [bug] `package.json` — invalid JSON
+  - Where: `package.json:11` — a trailing comma after `"name": "Pavel Husakouski",`
+  - Effect: `npm install` fails to parse; even `mocha` can't start from the repo (`ERR_MOCHA_UNPARSABLE_FILE`), needing the `--no-package` flag.
+  - Fix: remove the comma. Also: `"licenses"` → `"license": "MIT"` (SPDX), `"tags"` → `"keywords"`, add `"scripts": {"test": "gulp build"}`.
