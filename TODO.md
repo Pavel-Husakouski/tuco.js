@@ -4,7 +4,9 @@
 
 ---
 
-- [ ] 29 [types] Убрать `Parser<any>` у структурных комбинаторов: generic-сигнатуры для `first`/`second`/`between`/`chain`, оверлоады арностей 1–4 для `all`/`rep1`/`rep0`/`optional`/`or` (в т.ч. через `Combinator<A> = string | ((input) => Result<A>)`); `char*`/`word` не трогать — уже `Parser<string>`
+- [x] 31 [breaking] Заменить `chain`/`foldl`/`foldr` на `foldLeft`/`foldRight` (chain+fold в один шаг, без `[head, pairs]` наружу); `chain`/`foldl`/`foldr` — во внутренние `__*`; обновить демо/тесты и default-экспорт; два оверлоада (дефолт-дерево → `Parser<any>`, кастомный `apply` → `Parser<A>`)
+- [x] 30 [types] Типизировать `foldl`/`foldr` (вариант 1): вход `(value: [V, [P, V][]]) => any`; `apply` с `op: P`, `left`/`right` по смыслу (операнд `V` / аккумулятор `any`); результат остаётся `any`; дефолты `V = any`, `P = any`
+- [x] 29 [types] Убрать `Parser<any>` через variadic-tuple inference (без оверлоадов): `Combinator<A>` + хелперы `ValueOf`/`ValuesOf`/`ScalarOrTuple`/`RepValue`; по одной generic-сигнатуре на комбинатор (`all`/`first`/`second`/`between`/`rep1`/`rep0`/`optional`/`or`/`chain`); тела не менять (`__expose<any>` уже совместим — сигнатуры-only); `char*`/`word` не трогать — уже `Parser<string>`
 - [x] 28 [docs] Компактные JSDoc-комментарии 17 публичных функций `src/tuco.ts` (на английском); перевести русский комментарий `__all` (асимметрия арности) на английский
 - [x] 27 [verify] `npm run typecheck` (чисто), `npm test` (107 passing), `npm run build` → `lib/`, sanity-import `lib/tuco.js`
 - [x] 26 [docs] `README.md`: убрать `gulp`, описать `npm install`/`npm test`/`npm run build`/`npm run typecheck`

@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import {
-    all, anyChar, between, chain, charExcept, charIs, charMeets, charOneOf, first,
-    foldl, foldr, optional, or, rep0, rep1, second, word
+    all, anyChar, between, charExcept, charIs, charMeets, charOneOf, first,
+    foldLeft, foldRight, optional, or, rep0, rep1, second, word
 } from '../src/tuco.ts';
 
 describe('map', function() {
@@ -446,75 +446,60 @@ describe('anyChar', function(){
     })
 });
 
-describe('chain / foldl / foldr', function() {
+describe('foldLeft / foldRight', function() {
     const num = rep1(charOneOf('0123456789')).map(function(x){
         return parseInt(x.join(''));
     });
     const minus = charIs('-');
 
-    it('chain returns [head, pairs] for a chain', function(){
-        const parser = chain(num, minus);
-        const result = parser('2-3-4');
-
-        assert.deepEqual(result, { value:[2, [['-',3], ['-',4]]], rest:'' });
-    });
-
-    it('chain returns [head, null] when no operator follows', function(){
-        const parser = chain(num, minus);
-        const result = parser('2');
-
-        assert.deepEqual(result, { value:[2, null], rest:'' });
-    });
-
-    it('foldl builds a left-leaning AST with the default apply', function(){
-        const parser = chain(num, minus).map(foldl());
+    it('foldLeft builds a left-leaning AST with the default apply', function(){
+        const parser = foldLeft(num, minus);
         const result = parser('2-3-4');
 
         assert.deepEqual(result, { value: ['-', ['-', 2, 3], 4], rest: '' });
     });
 
-    it('foldr builds a right-leaning AST with the default apply', function(){
-        const parser = chain(num, minus).map(foldr());
+    it('foldRight builds a right-leaning AST with the default apply', function(){
+        const parser = foldRight(num, minus);
         const result = parser('2-3-4');
 
         assert.deepEqual(result, { value: ['-', 2, ['-', 3, 4]], rest: '' });
     });
 
-    it('foldl folds left with a custom apply', function(){
-        const parser = chain(num, minus).map(foldl(function(op, a, b){ return a - b; }));
+    it('foldLeft folds left with a custom apply', function(){
+        const parser = foldLeft(num, minus, function(op, a, b){ return a - b; });
         const result = parser('2-3-4');
 
         assert.deepEqual(result, { value: -5, rest: '' });
     });
 
-    it('foldr folds right with a custom apply', function(){
-        const parser = chain(num, minus).map(foldr(function(op, a, b){ return a - b; }));
+    it('foldRight folds right with a custom apply', function(){
+        const parser = foldRight(num, minus, function(op, a, b){ return a - b; });
         const result = parser('2-3-4');
 
         assert.deepEqual(result, { value: 3, rest: '' });
     });
 
-    it('foldl/foldr return the head unchanged for a single operand', function(){
-        const sub = function(op, a, b){ return a - b; };
-        const foldLeft  = chain(num, minus).map(foldl(sub));
-        const foldRight = chain(num, minus).map(foldr(sub));
-        const resultLeft  = foldLeft('7');
-        const resultRight = foldRight('7');
+    it('foldLeft/foldRight return the head unchanged for a single operand', function(){
+        const left  = foldLeft(num, minus, function(op, a, b){ return a - b; });
+        const right = foldRight(num, minus, function(op, a, b){ return a - b; });
+        const resultLeft  = left('7');
+        const resultRight = right('7');
 
         assert.deepEqual(resultLeft, { value: 7, rest: '' });
         assert.deepEqual(resultRight, { value: 7, rest: '' });
     });
 
-    it('chain validates its arguments', function(){
-        // @ts-expect-error — chain is deliberately called with one combinator
-        assert.throws(function(){ chain(word('a')); }, /accepts two combinators/);
+    it('foldLeft validates its arguments', function(){
+        // @ts-expect-error — foldLeft is deliberately called with one combinator
+        assert.throws(function(){ foldLeft(word('a')); }, /accepts two combinators/);
     });
 
-    it('foldl/foldr validate the optional apply', function(){
-        // @ts-expect-error — foldl is deliberately given a non-function
-        assert.throws(function(){ foldl('nope'); }, /optional apply function/);
-        // @ts-expect-error — foldr is deliberately given a non-function
-        assert.throws(function(){ foldr('nope'); }, /optional apply function/);
+    it('foldLeft/foldRight validate the optional apply', function(){
+        // @ts-expect-error — foldLeft is deliberately given a non-function
+        assert.throws(function(){ foldLeft(word('a'), word('a'), 'nope'); }, /optional apply function/);
+        // @ts-expect-error — foldRight is deliberately given a non-function
+        assert.throws(function(){ foldRight(word('a'), word('a'), 'nope'); }, /optional apply function/);
     });
 });
 

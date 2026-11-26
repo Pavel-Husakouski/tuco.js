@@ -1,19 +1,19 @@
 /*
     expr   = add
-    add    = mul { ('+' | '-') mul }             ; левая  → chain + foldl
-    mul    = unary { ('*' | '/' | '%') unary }   ; левая  → chain + foldl
+    add    = mul { ('+' | '-') mul }             ; левая  → foldLeft
+    mul    = unary { ('*' | '/' | '%') unary }   ; левая  → foldLeft
     unary  = '-' unary | power                   ; унарный минус слабее ^
-    power  = atom { '^' atom }                   ; правая → chain + foldr
+    power  = atom { '^' atom }                   ; правая → foldRight
     atom   = number | variable | '(' expr ')'
     number = [0-9]+
     variable = [a-zA-Z][a-zA-Z0-9]*
 
-    foldl/foldr дают [op, a, b] (оператор первым).
+    foldLeft/foldRight дают [op, a, b] (оператор первым).
 */
 
 import assert from 'node:assert';
 import {
-    all, between, chain, charIs, charMeets, charOneOf, foldl, foldr, or, rep0, rep1
+    all, between, charIs, charMeets, charOneOf, foldLeft, foldRight, or, rep0, rep1
 } from '../src/tuco.ts';
 
 const number = rep1(charOneOf("0123456789")).map(function(x){
@@ -46,8 +46,8 @@ atomImpl = or(
     between('(', expr, ')')
 );
 
-// power = atom { '^' atom }   — правая ассоциативность, chain + foldr
-powerImpl = chain(atom, charIs('^')).map(foldr());
+// power = atom { '^' atom }   — правая ассоциативность, foldRight
+powerImpl = foldRight(atom, charIs('^'));
 
 // unary = '-' unary | power   — унарный минус слабее ^
 unaryImpl = or(
@@ -55,11 +55,11 @@ unaryImpl = or(
     power
 );
 
-// mul = unary { ('*' | '/' | '%') unary }   — левая, chain + foldl
-mulImpl = chain(unary, or(charIs('*'), charIs('/'), charIs('%'))).map(foldl());
+// mul = unary { ('*' | '/' | '%') unary }   — левая, foldLeft
+mulImpl = foldLeft(unary, or(charIs('*'), charIs('/'), charIs('%')));
 
-// add = mul { ('+' | '-') mul }   — левая, chain + foldl
-addImpl = chain(mul, or(charIs('+'), charIs('-'))).map(foldl());
+// add = mul { ('+' | '-') mul }   — левая, foldLeft
+addImpl = foldLeft(mul, or(charIs('+'), charIs('-')));
 
 exprImpl = add;
 
