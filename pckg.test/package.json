@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "build": "../node_modules/.bin/tsc",
+    "test": "npm run build && ../node_modules/.bin/mocha"
+  },
+  "dependencies": {
+    "@beeff/tuco": "*"
+  },
+  "devDependencies": {
+    "@beeff/loose-match": "^1.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.6.11",
+    "mocha": "^12.0.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

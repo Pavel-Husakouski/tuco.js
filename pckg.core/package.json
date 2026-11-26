@@ -1,0 +1,41 @@
+{
+  "name": "@beeff/tuco",
+  "version": "1.0.0-rc1",
+  "description": "Minimalist library to use with simple query grammars, built on parser combinators.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf lib",
+    "build": "npm run clean && npm run compile",
+    "compile": "../node_modules/.bin/tsc --project ./tsconfig.build.json",
+    "build:test": "../node_modules/.bin/tsc --project ./tsconfig.json",
+    "test": "npm run build:test && ../node_modules/.bin/mocha"
+  },
+  "files": [
+    "lib/*",
+    "LICENSE",
+    "readme.md",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pavel-Husakouski/tuco.js"
+  },
+  "author": {
+    "name": "Pavel Husakouski"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@beeff/loose-match": "^1.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.6.11",
+    "mocha": "^12.0.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

@@ -2,13 +2,15 @@
 
 Code design and conventions (including test style): [DESIGN.md](./DESIGN.md).
 
+This is an npm workspaces monorepo: `pckg.core` is the `@beeff/tuco` library, `pckg.test` holds the demo grammar tests.
+
 ## Language
 
 Code comments and `.md` files are always written in English.
 
 ## CHANGELOG.md
 
-`CHANGELOG.md` doubles as a changelog/backlog. Format:
+`pckg.core/CHANGELOG.md` doubles as a changelog/backlog. Format:
 
 - flat list, one item per line: `- [ ] N [tag] description`;
 - new items go on top;

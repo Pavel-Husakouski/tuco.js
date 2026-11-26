@@ -26,7 +26,7 @@ Tests follow one pattern: first declare the parser, then run it and save the res
 
 ```ts
 import { match } from '@beeff/loose-match';
-import { anyChar } from '../src/tuco.ts';
+import { anyChar } from '../src';
 
 it('value and rest are not when match', function(){
     const parser = anyChar();

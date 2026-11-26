@@ -2,7 +2,7 @@ import { instanceOf, match, re } from '@beeff/loose-match';
 import {
     all, anyChar, between, charExcept, charIs, charMeets, charOneOf, first,
     foldLeft, foldRight, optional, or, rep0, rep1, second, word
-} from '../src/tuco.ts';
+} from '../src/index.js';
 
 // Returns the error thrown by fn, or null when it does not throw.
 function thrown(fn){

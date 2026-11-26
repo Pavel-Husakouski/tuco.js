@@ -22,7 +22,7 @@ import { match, predicate } from '@beeff/loose-match';
 import {
     all, between, charExcept, charIs, charMeets, charOneOf, first,
     optional, or, rep0, rep1, second, word
-} from '../src/tuco.ts';
+} from '@beeff/tuco';
 
 // Truthy check, used to assert that a rule name is present in the byName map.
 const truthy = predicate(function(x){ return Boolean(x); });

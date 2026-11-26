@@ -5,7 +5,7 @@
 */
 
 import { match } from '@beeff/loose-match';
-import { all, charIs, charOneOf, optional, rep1 } from '../src/tuco.ts';
+import { all, charIs, charOneOf, optional, rep1 } from '@beeff/tuco';
 const toString = function(x){ return x.join(''); };
 
 describe('numbers', function() {

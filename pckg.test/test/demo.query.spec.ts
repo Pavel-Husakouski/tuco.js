@@ -16,7 +16,7 @@ space 			> singleSpace , {singleSpace} ;
 import { match } from '@beeff/loose-match';
 import {
     all, between, charExcept, charOneOf, first, optional, or, rep0, rep1, second, word
-} from '../src/tuco.ts';
+} from '@beeff/tuco';
 
 const opt = optional;
 

@@ -11,21 +11,22 @@ Usage
 -----
 
 ```ts
-import { or, word } from 'tuco';
+import { or, word } from '@beeff/tuco';
 
 const parser = or(word('first'), word('second'));
 parser('firstsecond');   // { value: 'first', rest: 'second' }
 ```
 
-Look at `test/demo*.ts` for more details.
+Look at `pckg.test/test/demo*.spec.ts` for more details.
 
 Development
 -----------
 
 * npm install
-* npm test            # mocha + tsx
-* npm run typecheck   # tsc --noEmit
-* npm run build       # tsc -> lib/ (JS + .d.ts + sourcemaps)
+* npm test            # build core + run all workspace tests (mocha + tsx)
+* npm run test:core   # core unit tests
+* npm run test:test   # demo grammar tests
+* npm run build       # compile pckg.core -> lib/ (JS + .d.ts + sourcemaps)
 
 Priorities
 ----------

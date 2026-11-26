@@ -1,44 +1,21 @@
 {
-  "name": "tuco",
+  "name": "tuco workspace",
   "version": "1.0.0",
-  "description": "Minimalist library to use with simple query grammars, built on parser combinators.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Pavel-Husakouski/tuco.js"
-  },
-  "author": {
-    "name": "Pavel Husakouski"
-  },
-  "main": "./lib/tuco.js",
-  "types": "./lib/tuco.d.ts",
-  "files": [
-    "lib"
-  ],
-  "type": "module",
-  "tags": [
-    "query",
-    "expression",
-    "grammar",
-    "parser",
-    "combinators"
-  ],
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "https://raw.githubusercontent.com/hollander/tuco.js/master/LICENSE"
-    }
+  "private": true,
+  "description": "Workspace for tuco library and its test packages",
+  "workspaces": [
+    "pckg.core",
+    "pckg.test"
   ],
   "scripts": {
-    "test": "node --import tsx ./node_modules/mocha/bin/mocha.js",
-    "typecheck": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json"
+    "build": "npm run build -w pckg.core",
+    "test:core": "npm run test -w pckg.core",
+    "test:test": "npm run test -w pckg.test",
+    "test": "npm run build && npm run --workspaces test"
   },
-  "devDependencies": {
-    "@beeff/loose-match": "^1.0.0",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^26.6.11",
-    "mocha": "^12.0.3",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+  "author": "Pauel <phusakouski@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/Pavel-Husakouski/tuco.js"
   }
 }

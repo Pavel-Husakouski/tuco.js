@@ -1,9 +1,8 @@
 # CHANGELOG
 
-Review results from 25.11.2026. All items verified against the live code (node v26.12.0, test suite: 74 passing).
+# version 1.0.0
 
----
-
+- [x] 36 [build] Add publish files to `package.json` `files`: `lib`, `README.md`, `CHANGELOG.md`, `LICENSE`
 - [x] 35 [docs] Rename `TODO.md` to `CHANGELOG.md` and update the references in `CLAUDE.md` (section header + text) and the self-references in the changelog
 - [x] 34 [tests] Replace `node:assert` (`deepEqual`/`strictEqual`/`assert`/`throws`) with `@beeff/loose-match` matchers in every test: one `match(...).with(...)` per test; add `@beeff/loose-match` to devDeps; rewrite the `DESIGN.md` test-style section
 - [x] 33 [docs] Translate `.md` files to English (`DESIGN.md`, `CHANGELOG.md`, `CLAUDE.md`; `README.md` was already English) and document the language rule + `CHANGELOG.md` workflow in `CLAUDE.md`

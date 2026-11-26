@@ -14,7 +14,7 @@
 import { match } from '@beeff/loose-match';
 import {
     all, between, charIs, charMeets, charOneOf, foldLeft, foldRight, or, rep0, rep1
-} from '../src/tuco.ts';
+} from '@beeff/tuco';
 
 const number = rep1(charOneOf("0123456789")).map(function(x){
     return parseInt(x.join(''));

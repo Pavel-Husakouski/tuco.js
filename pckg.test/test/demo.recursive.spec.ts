@@ -1,5 +1,5 @@
 import { match } from '@beeff/loose-match';
-import { all, charIs, optional } from '../src/tuco.ts';
+import { all, charIs, optional } from '@beeff/tuco';
 
 function toString(x){ 
     if(x === null || typeof x === 'string')
