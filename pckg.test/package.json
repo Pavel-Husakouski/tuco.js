@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "scripts": {
     "build": "../node_modules/.bin/tsc",
     "test": "npm run build && ../node_modules/.bin/mocha"
