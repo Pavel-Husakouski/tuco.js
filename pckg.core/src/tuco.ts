@@ -1,5 +1,15 @@
 export type Cursor = { str: string; pos: number };
-export type Fail = { failed: true; pos: number; expected: string[] };
+export type Fail = {
+  failed: true;
+  pos: number;
+  expected: string[];
+  /**
+   * Set when parsing stopped because a resource limit was hit (input length,
+   * step budget, depth budget or a caught `RangeError`) rather than because
+   * the input did not match. Optional, so ordinary failures keep their shape.
+   */
+  limit?: boolean;
+};
 export type Success<T> = { value: T; rest: string };
 export type Result<T> = Success<T> | Fail;
 export interface Parser<T> {
@@ -30,6 +40,34 @@ export type RepValue<Cs extends Combinator[]> = Cs extends [infer C]
 // plain string only at the public boundary, which is O(n) once instead of
 // O(n^2).  A failed parse carries the position it stopped at and what it
 // expected there, instead of a bare `null`.
+//
+// Trust in the input is bounded at that boundary: inputs longer than
+// `MAX_INPUT_LENGTH` are rejected before parsing, one parse may take at most
+// `MAX_PARSE_STEPS` parser-entry steps and nest at most `MAX_PARSE_DEPTH`
+// parser calls, and a `RangeError` escaping the parser (a stack overflow) is
+// turned into an ordinary failure.  Every such failure is a normal `Fail`
+// additionally marked with `limit: true`.
+
+/** Longest accepted input, measured in UTF-16 code units. */
+export const MAX_INPUT_LENGTH = 100000;
+
+/** Maximum number of parser-entry steps for one top-level parse. */
+export const MAX_PARSE_STEPS = 1000000;
+
+/** Maximum nesting depth of parser calls for one top-level parse. */
+export const MAX_PARSE_DEPTH = 1000;
+
+const __INPUT_LIMIT_EXPECTED = "input length exceeds " + MAX_INPUT_LENGTH;
+const __STEP_LIMIT_EXPECTED = "parse step budget exceeded";
+const __DEPTH_LIMIT_EXPECTED = "parse depth budget exceeded";
+const __OVERFLOW_EXPECTED = "parser runtime overflow";
+
+type __Budget = { steps: number; depth: number; pos: number };
+
+// Budget of the parse currently running; `null` outside a top-level parse.
+// Parsing is synchronous, so a single module-level budget is enough; nested
+// boundary calls (e.g. from a predicate) share the active budget.
+let __budget: __Budget | null = null;
 
 // Explicit null-or-undefined check (allowed spelling, see DESIGN.md).
 function __isNil(x: any): boolean {
@@ -56,10 +94,56 @@ function __materialize(result: any): any {
   return { value: result.value, rest: result.rest.str.slice(result.rest.pos) };
 }
 
+function __run(parser: (cursor: Cursor) => any, cursor: any): any {
+  const budget = __budget;
+
+  if (budget === null) return parser(cursor);
+
+  budget.pos = cursor.pos;
+  budget.steps += 1;
+
+  if (budget.steps > MAX_PARSE_STEPS)
+    return __fail(cursor.pos, __STEP_LIMIT_EXPECTED, true);
+
+  budget.depth += 1;
+
+  if (budget.depth > MAX_PARSE_DEPTH) {
+    budget.depth -= 1;
+    return __fail(cursor.pos, __DEPTH_LIMIT_EXPECTED, true);
+  }
+
+  try {
+    return parser(cursor);
+  } finally {
+    budget.depth -= 1;
+  }
+}
+
 function __expose<T>(parser: (cursor: Cursor) => any): Parser<T> {
   const exposed = function (rest: any): any {
-    if (__isCursor(rest)) return parser(rest);
-    return __materialize(parser(__toCursor(rest)));
+    if (__isCursor(rest)) return __run(parser, rest);
+
+    const cursor = __toCursor(rest);
+
+    if (cursor.str.length > MAX_INPUT_LENGTH)
+      return __fail(cursor.pos, __INPUT_LIMIT_EXPECTED, true);
+
+    const own = __budget === null;
+    if (own) __budget = { steps: 0, depth: 0, pos: cursor.pos };
+
+    try {
+      return __materialize(__run(parser, cursor));
+    } catch (e) {
+      if (!(e instanceof RangeError)) throw e;
+
+      return __fail(
+        __budget === null ? cursor.pos : __budget.pos,
+        __OVERFLOW_EXPECTED,
+        true,
+      );
+    } finally {
+      if (own) __budget = null;
+    }
   } as unknown as Parser<T>;
 
   Object.defineProperty(exposed, "map", {
@@ -86,16 +170,24 @@ function __map(parser: any, projection: any): any {
   };
 }
 
-function __fail(pos: number, expected: any): Fail {
-  return {
+function __fail(pos: number, expected: any, limit?: boolean): Fail {
+  const fail: Fail = {
     failed: true,
     pos: pos,
     expected: Array.isArray(expected) ? expected : [expected],
   };
+
+  if (limit === true) fail.limit = true;
+
+  return fail;
 }
 
 function __isFail(r: any): r is Fail {
   return !__isNil(r) && r.failed === true;
+}
+
+function __isLimit(r: any): boolean {
+  return __isFail(r) && r.limit === true;
 }
 
 function __expect(checkResult: any, msg: string): void {
@@ -317,6 +409,7 @@ function __rep1(parser: any): any {
       const result = parser(rest);
 
       if (__isFail(result)) {
+        if (__isLimit(result)) return result;
         if (value.length === 0) return result;
         return { value: value, rest: rest };
       }
@@ -348,7 +441,9 @@ function __rep0(parser: any): any {
   return function (cursor: any) {
     const result = rep(cursor);
 
-    return __isFail(result) ? { value: [], rest: cursor } : result;
+    if (!__isFail(result)) return result;
+
+    return __isLimit(result) ? result : { value: [], rest: cursor };
   };
 }
 
@@ -368,7 +463,9 @@ function __optional(parser: any): any {
   return function (cursor: any) {
     const result = parser(cursor);
 
-    return __isFail(result) ? { value: null, rest: cursor } : result;
+    if (!__isFail(result)) return result;
+
+    return __isLimit(result) ? result : { value: null, rest: cursor };
   };
 }
 
@@ -417,6 +514,7 @@ function __or(parsers: any): any {
       const result = parsers[i](cursor);
 
       if (!__isFail(result)) return result;
+      if (__isLimit(result)) return result;
       failures.push(result);
     }
 

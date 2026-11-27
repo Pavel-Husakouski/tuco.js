@@ -24,7 +24,14 @@ A deliberate asymmetry: the single case yields a plain scalar rather than extra 
 
 - Ordered choice `or` memoizes per parser instance and input position (packrat-style): within a parse of one input, re-entering the same `or` at the same position returns the cached `Success`/`Fail` instead of recomputing it, so shared-prefix alternatives no longer cost O(2^k). Memoization does not rescue left recursion, so keep grammars left-factored and unambiguous.
 - "Character" means a UTF-16 code unit. `charIs` / `charOneOf` / `charExcept` / `charMeets` / `anyChar` / `word` all operate on code units, so a single astral character is two code units — `charIs("😀")` is rejected, while `word("😀")` matches through two units.
-- Parsing is synchronous and unbounded (no limits on input length, depth or time). Callers of untrusted input must bound the length themselves and wrap parsing in `try`/`catch` (or offload it to a worker). `rep1` / `rep0` additionally throw a clear error when their inner parser matches zero width.
+- Parsing is synchronous and bounded at the public boundary (`__expose`, where a parser is invoked with a raw string or `null`):
+  - **Input length** — input longer than `MAX_INPUT_LENGTH` (100 000 UTF-16 code units) is rejected before any parser runs.
+  - **Work budget** — one top-level parse may take at most `MAX_PARSE_STEPS` (1 000 000) parser-entry steps and nest at most `MAX_PARSE_DEPTH` (1 000) parser calls. Exceeding either stops the parse, so deep recursion and exponential backtracking can neither hang nor overflow the stack.
+  - **Crashes** — a `RangeError` escaping the parser (for example a stack overflow) is caught at the boundary.
+
+  Each produces the ordinary failure shape `{ failed: true, pos, expected }`, extended with `limit: true` (`Fail.limit`) so a caller can distinguish a budget failure from a normal mismatch: `pos` is the last position reached and `expected` names the exceeded limit.
+
+  `rep1` / `rep0` additionally throw a clear error when their inner parser matches zero width (a grammar bug, not an input problem).
 
 ## Test style
 
