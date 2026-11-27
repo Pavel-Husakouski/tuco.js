@@ -128,9 +128,9 @@ const comment = all(";", rep0(charExcept("\n")), CRLF);
 
 const cNl = or(comment, CRLF); // c-nl = comment / CRLF
 const cWsp = or(WSP, all(cNl, WSP)); // c-wsp = WSP / (c-nl WSP)
-function join(xs: string[]) {
+const join = function (xs: string[]) {
   return xs.join("");
-}
+};
 
 // ---- 1* runs ----
 const BITS = rep1(BIT).map(join); // 1*BIT
@@ -165,7 +165,7 @@ const numBody = (digits: Parser<string>) => {
   return all(digits, optional(or(range, seq)));
 };
 
-function toNum(base: string) {
+const toNum = function (base: string) {
   return function (body: any) {
     // body = [first, tail], tail = string (range) | array (seq) | null
     const first = body[0],
@@ -179,7 +179,7 @@ function toNum(base: string) {
     } else values = [first].concat(tail);
     return { kind: "num", base: base, values: values, range: range };
   };
-}
+};
 
 const numVal = second(
   "%",
@@ -291,7 +291,7 @@ const rulelist = first(rep1(or(rule, blankLine)), rep0(cWsp)).map(
 );
 
 // ---- tests ----
-function byName(rules: any[]) {
+const byName = function (rules: any[]) {
   // Grammar-controlled names can be `__proto__` or `constructor`, so the
   // lookup must not inherit from Object.prototype: a plain `{}` would let
   // `__proto__` replace the prototype instead of creating a real key.
@@ -300,7 +300,7 @@ function byName(rules: any[]) {
     map[r.name] = r;
   });
   return map;
-}
+};
 
 // Parse the grammar once up front, so every test works independently of the
 // execution order (a filtered or single-test run does not depend on an earlier `it`).
@@ -310,7 +310,7 @@ const rules = parsedRulelist.value;
 
 describe("abnf (meta-demo)", function () {
   it("parses the full ABNF self-description", function () {
-    match(parsedRulelist.rest).with("");
+    match(parsedRulelist).with({ rest: "" });
   });
 
   it("collects core and meta rules by name", function () {

@@ -90,58 +90,56 @@ addImpl = all(mul, rep0(all(or("+", "-"), mul))).map(foldl);
 exprImpl = add;
 
 describe("calculator", function () {
-  function parse(s: string) {
-    const result = expr(s);
-    if ("failed" in result) throw new Error("expected success");
-    return result;
-  }
+  const parse = function (s: string) {
+    return expr(s);
+  };
 
   it("chains subtraction left-associatively", function () {
-    match(parse("2-3-4").value).with(["-", ["-", 2, 3], 4]);
+    match(parse("2-3-4")).with({ value: ["-", ["-", 2, 3], 4] });
   });
 
   it("chains division left-associatively", function () {
-    match(parse("10/5/2").value).with(["/", ["/", 10, 5], 2]);
+    match(parse("10/5/2")).with({ value: ["/", ["/", 10, 5], 2] });
   });
 
   it("gives * / % higher precedence than + -", function () {
-    match(parse("2+3*5").value).with(["+", 2, ["*", 3, 5]]);
+    match(parse("2+3*5")).with({ value: ["+", 2, ["*", 3, 5]] });
   });
 
   it("chains ^ right-associatively (foldr)", function () {
-    match(parse("2^3^2").value).with(["^", 2, ["^", 3, 2]]);
+    match(parse("2^3^2")).with({ value: ["^", 2, ["^", 3, 2]] });
   });
 
   it("parses modulo", function () {
-    match(parse("7%4").value).with(["%", 7, 4]);
+    match(parse("7%4")).with({ value: ["%", 7, 4] });
   });
 
   it("parses unary minus", function () {
-    match(parse("-2").value).with(["-", 2]);
+    match(parse("-2")).with({ value: ["-", 2] });
   });
 
   it("binds unary minus looser than ^: -2^2 = -(2^2)", function () {
-    match(parse("-2^2").value).with(["-", ["^", 2, 2]]);
+    match(parse("-2^2")).with({ value: ["-", ["^", 2, 2]] });
   });
 
   it("binds unary minus tighter than *: -2*3 = (-2)*3", function () {
-    match(parse("-2*3").value).with(["*", ["-", 2], 3]);
+    match(parse("-2*3")).with({ value: ["*", ["-", 2], 3] });
   });
 
   it("parses parens", function () {
-    match(parse("(2+3)*4").value).with(["*", ["+", 2, 3], 4]);
+    match(parse("(2+3)*4")).with({ value: ["*", ["+", 2, 3], 4] });
   });
 
   it("parses variables", function () {
-    match(parse("x*(y+1)").value).with(["*", "x", ["+", "y", 1]]);
+    match(parse("x*(y+1)")).with({ value: ["*", "x", ["+", "y", 1]] });
   });
 
   it("2-3-4 consumes the whole input", function () {
-    match(parse("2-3-4").rest).with("");
+    match(parse("2-3-4")).with({ rest: "" });
   });
 
   it("2^3^2 consumes the whole input", function () {
-    match(parse("2^3^2").rest).with("");
+    match(parse("2^3^2")).with({ rest: "" });
   });
 
   it("shows the ASTs", function () {

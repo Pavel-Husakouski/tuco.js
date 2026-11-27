@@ -28,7 +28,7 @@ A deliberate asymmetry: the single case yields a plain scalar rather than extra 
 
 ## Test style
 
-Tests follow one pattern: first declare the parser, then run it and save the result, then check it with a single asymmetric matcher — exactly one `match(...).with(...)` per test.
+Tests follow one pattern: first declare the parser, then run it and save the result, then check it with a single asymmetric matcher — every test that asserts a result uses exactly one `match(...).with(...)` (a test that only prints output for inspection has none). A narrowing guard that only extracts a value (see [Checking errors](#checking-errors)) is not a matcher and does not count against this.
 
 ```ts
 import { match } from "@beeff/loose-match";
@@ -54,6 +54,7 @@ Rules:
      return /[a-zA-Z]/.test(c);
    };
    ```
+   A named helper is therefore a `const`-bound function expression, not a `function` declaration; the `function` keyword remains only in callback position (`it(...)`, `describe(...)`, `.map(...)`, `predicate(...)`).
 3. **`let` only for reassignable values.** A variable whose value changes later (accumulators in loops, `*Impl` forward declarations) is declared with `let`; `var` is not used:
    ```ts
    let acc = v[0];
@@ -74,7 +75,7 @@ Rules:
 
 ### Checking errors
 
-The parse result is a tagged union `Result<T> = Success<T> | Fail`, so `.value`/`.rest`/`.pos`/`.expected` are never accessed directly: a test compares the result via `match(...).with(...)`, or narrows the type via `'failed' in result`.
+The parse result is a tagged union `Result<T> = Success<T> | Fail`, so the parse-result fields `.value`/`.rest`/`.pos`/`.expected` are never read off an unnarrowed union. A test asserts the result via `match(...).with(...)`; when it needs the value for further checks, it first narrows the type via `'failed' in result`.
 
 A failure is compared as a whole:
 
@@ -98,13 +99,15 @@ When only the fact of failure is needed:
 match(result).with({ failed: true });
 ```
 
-When a value must be extracted from a successful result for further checks — narrow via `if`:
+When a value must be extracted from a successful result for further checks, narrow via `if`. This guard asserts failure, but it is not a `match(...)` and therefore does not violate the one-match rule:
 
 ```ts
 const result = rulelist("x = ...");
 if ("failed" in result) throw new Error("expected success");
-// result is narrowed to Success<any> here
+// result is narrowed to Success<any> here; `result.value` and `result.rest` are safe
 ```
+
+The same narrowing may live in a small helper when several tests extract values.
 
 ## Line endings
 
