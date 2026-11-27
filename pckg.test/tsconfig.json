@@ -9,8 +9,7 @@
     "types": ["node", "mocha"],
     "sourceMap": true,
     "declaration": true,
-    "noEmit": true,
-    "outDir": "../lib"
+    "noEmit": true
   },
   "include": ["test/**/*.ts"]
 }
