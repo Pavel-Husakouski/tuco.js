@@ -90,7 +90,7 @@ function __fail(pos: number, expected: any): Fail {
   return {
     failed: true,
     pos: pos,
-    expected: __isArray(expected) ? expected : [expected],
+    expected: Array.isArray(expected) ? expected : [expected],
   };
 }
 
@@ -204,10 +204,6 @@ function __areCombinators(array: any): boolean {
   return array.every(function (arg: any) {
     return __isFunction(arg) || __isString(arg);
   });
-}
-
-function __isArray(arg: any): boolean {
-  return Object.prototype.toString.call(arg) === "[object Array]";
 }
 
 function __builtin(parsers: any): any {

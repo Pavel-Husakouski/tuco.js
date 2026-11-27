@@ -1,4 +1,4 @@
-import { instanceOf, match, re } from "@beeff/loose-match";
+import { instanceOf, match, predicate, re } from "@beeff/loose-match";
 import {
   all,
   anyChar,
@@ -572,6 +572,27 @@ describe("errors", function () {
     const result = parser("ab");
 
     match(result).with({ failed: true, pos: 2, expected: ['"c"'] });
+  });
+});
+
+describe("array detection", function () {
+  it("does not treat a Symbol.toStringTag spoof as an array", function () {
+    const spoofed = { [Symbol.toStringTag]: "Array" };
+    const parser = charMeets(function () {
+      return false;
+    }, spoofed as any);
+    const result = parser("xyz");
+
+    match(result).with({
+      failed: true,
+      expected: predicate(function (expected: any) {
+        return (
+          Array.isArray(expected) &&
+          expected.length === 1 &&
+          expected[0] === spoofed
+        );
+      }),
+    });
   });
 });
 
