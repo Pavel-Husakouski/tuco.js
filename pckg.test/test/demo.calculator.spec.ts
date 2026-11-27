@@ -151,5 +151,21 @@ describe("calculator", function () {
     console.log("-2^2     ->", JSON.stringify(parse("-2^2")));
     console.log("(2+3)*4  ->", JSON.stringify(parse("(2+3)*4")));
     console.log("x*(y+1)  ->", JSON.stringify(parse("x*(y+1)")));
+
+    match([
+      parse("2-3-4"),
+      parse("2^3^2"),
+      parse("2+3*5"),
+      parse("-2^2"),
+      parse("(2+3)*4"),
+      parse("x*(y+1)"),
+    ]).with([
+      { value: ["-", ["-", 2, 3], 4], rest: "" },
+      { value: ["^", 2, ["^", 3, 2]], rest: "" },
+      { value: ["+", 2, ["*", 3, 5]], rest: "" },
+      { value: ["-", ["^", 2, 2]], rest: "" },
+      { value: ["*", ["+", 2, 3], 4], rest: "" },
+      { value: ["*", "x", ["+", "y", 1]], rest: "" },
+    ]);
   });
 });
