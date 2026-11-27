@@ -10,6 +10,7 @@ import {
   defer,
   eof,
   first,
+  formatFail,
   MAX_INPUT_LENGTH,
   MAX_PARSE_DEPTH,
   optional,
@@ -710,6 +711,83 @@ describe("limits", function () {
         parser("");
       }),
     ).with(instanceOf(Error, { message: re(/matched empty input/) }));
+  });
+});
+
+describe("diagnostics", function () {
+  it("line and column on the second line with LF", function () {
+    const parser = all(word("first\n"), word("second"));
+    const result = parser("first\nseXond");
+
+    match(result).with({
+      failed: true,
+      pos: 8,
+      expected: ['"c"'],
+      line: 2,
+      column: 3,
+    });
+  });
+
+  it("line and column on the second line with CRLF", function () {
+    const parser = all(word("first\r\n"), word("second"));
+    const result = parser("first\r\nseXond");
+
+    match(result).with({
+      failed: true,
+      pos: 9,
+      expected: ['"c"'],
+      line: 2,
+      column: 3,
+    });
+  });
+
+  it("limit failures also carry line and column", function () {
+    const parser = charMeets(function () {
+      throw new RangeError("stack overflow");
+    });
+    const result = parser("x");
+
+    match(result).with({
+      failed: true,
+      limit: true,
+      line: 1,
+      column: 1,
+    });
+  });
+
+  it("formatFail renders the excerpt and caret", function () {
+    const parser = word("abc");
+    const result = parser("abx");
+    if (!("failed" in result)) throw new Error("expected failure");
+
+    const formatted = formatFail(result, "abx");
+
+    match(formatted).with('expected "c" at line 1, column 3\n1 | abx\n  |   ^');
+  });
+
+  it("formatFail excerpts the offending line of a multi-line input", function () {
+    const source = "line1\nline2\nzzz";
+    const parser = all(word("line1\n"), word("line2\n"), charIs("x"));
+    const result = parser(source);
+    if (!("failed" in result)) throw new Error("expected failure");
+
+    const formatted = formatFail(result, source);
+
+    match(formatted).with('expected "x" at line 3, column 1\n3 | zzz\n  | ^');
+  });
+
+  it("formatFail renders a limit failure", function () {
+    const parser = charMeets(function () {
+      throw new RangeError("stack overflow");
+    });
+    const result = parser("x");
+    if (!("failed" in result)) throw new Error("expected failure");
+
+    const formatted = formatFail(result, "x");
+
+    match(formatted).with(
+      "expected parser runtime overflow at line 1, column 1\n1 | x\n  | ^",
+    );
   });
 });
 

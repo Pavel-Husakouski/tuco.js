@@ -9,6 +9,10 @@ export type Fail = {
    * the input did not match. Optional, so ordinary failures keep their shape.
    */
   limit?: boolean;
+  /** 1-based line of `pos`, added at the public boundary. */
+  line?: number;
+  /** 1-based column of `pos`, counted in UTF-16 code units. */
+  column?: number;
 };
 export type Success<T> = { value: T; rest: string };
 export type Result<T> = Success<T> | Fail;
@@ -89,8 +93,9 @@ function __toCursor(rest: any): Cursor {
   return { str: rest, pos: 0 };
 }
 
-function __materialize(result: any): any {
-  if (__isNil(result) || __isFail(result)) return result;
+function __materialize(result: any, input: string): any {
+  if (__isNil(result)) return result;
+  if (__isFail(result)) return __locateFail(result, input);
   return { value: result.value, rest: result.rest.str.slice(result.rest.pos) };
 }
 
@@ -135,7 +140,10 @@ function __expose<T>(parser: (cursor: Cursor) => any): Parser<T> {
 
     if (cursor.str.length > MAX_INPUT_LENGTH) {
       if (own) __furthest = null;
-      return __fail(cursor.pos, __INPUT_LIMIT_EXPECTED, true);
+      return __locateFail(
+        __fail(cursor.pos, __INPUT_LIMIT_EXPECTED, true),
+        cursor.str,
+      );
     }
 
     if (own) {
@@ -144,14 +152,20 @@ function __expose<T>(parser: (cursor: Cursor) => any): Parser<T> {
     }
 
     try {
-      return __materialize(__withFurthestFailure(__run(parser, cursor)));
+      return __materialize(
+        __withFurthestFailure(__run(parser, cursor)),
+        cursor.str,
+      );
     } catch (e) {
       if (!(e instanceof RangeError)) throw e;
 
-      return __fail(
-        __budget === null ? cursor.pos : __budget.pos,
-        __OVERFLOW_EXPECTED,
-        true,
+      return __locateFail(
+        __fail(
+          __budget === null ? cursor.pos : __budget.pos,
+          __OVERFLOW_EXPECTED,
+          true,
+        ),
+        cursor.str,
       );
     } finally {
       if (own) __budget = null;
@@ -220,6 +234,79 @@ function __isFail(r: any): r is Fail {
 
 function __isLimit(r: any): boolean {
   return __isFail(r) && r.limit === true;
+}
+
+// Computes a 1-based `line` / `column` for `pos`. A line break is `\n`,
+// `\r\n`, or a lone `\r`; positions are counted in UTF-16 code units.
+function __locate(
+  input: string,
+  pos: number,
+): { line: number; column: number } {
+  const limit = Math.min(Math.max(pos, 0), input.length);
+  let line = 1;
+  let column = 1;
+
+  for (let i = 0; i < limit; i++) {
+    const ch = input.charAt(i);
+
+    if (ch === "\r" && input.charAt(i + 1) === "\n") {
+      // The pair is one line break once both units are before `pos`.
+      if (i + 1 < limit) {
+        line += 1;
+        column = 1;
+        i += 1;
+      }
+      continue;
+    }
+
+    if (ch === "\n" || ch === "\r") {
+      line += 1;
+      column = 1;
+    } else {
+      column += 1;
+    }
+  }
+
+  return { line: line, column: column };
+}
+
+// Adds `line` / `column` to a failure at the public boundary, where the input
+// string is known (internal parsers only carry a cursor).
+function __locateFail(fail: Fail, input: string): Fail {
+  const location = __locate(input, fail.pos);
+
+  fail.line = location.line;
+  fail.column = location.column;
+
+  return fail;
+}
+
+/**
+ * Renders a failure as a human-readable diagnostic: a summary, the offending
+ * line, and a caret under the failure column.
+ */
+export function formatFail(fail: Fail, input: string): string {
+  const source = __isString(input) ? input : "";
+  const location = __locate(source, fail.pos);
+  const line = fail.line === undefined ? location.line : fail.line;
+  const column = fail.column === undefined ? location.column : fail.column;
+  const lines = source.split(/\r\n|\r|\n/);
+  const excerpt = lines[line - 1];
+  const text = __isNil(excerpt) ? "" : excerpt;
+  const label = String(line);
+  const gutter = " ".repeat(label.length);
+  const caret = " ".repeat(Math.max(column - 1, 0));
+
+  return [
+    "expected " +
+      fail.expected.join(", ") +
+      " at line " +
+      line +
+      ", column " +
+      column,
+    label + " | " + text,
+    gutter + " | " + caret + "^",
+  ].join("\n");
 }
 
 function __expect(checkResult: any, msg: string): void {
