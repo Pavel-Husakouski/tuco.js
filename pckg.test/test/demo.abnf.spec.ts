@@ -118,6 +118,11 @@ function lex(p: Parser<any>){ return first(p, ws); }   // parse p and skip trail
 
 function join(xs: string[] | null){ return xs === null ? '' : xs.join(''); }
 
+// ---- 1* runs ----
+const BITS      = rep1(BIT).map(join);     // 1*BIT
+const DIGITS    = rep1(DIGIT).map(join);   // 1*DIGIT
+const HEXDIGITS = rep1(HEXDIG).map(join);  // 1*HEXDIG
+
 // ---- atomic tokens (each with trailing spacing) ----
 
 // rulename = ALPHA *(ALPHA / DIGIT / "-")
@@ -133,12 +138,11 @@ const proseVal = lex(between(charIs('<'), rep0(charExcept('>\n')).map(join), cha
     .map(function(s){ return { kind:'prose', value: s }; });
 
 // num-val = "%" (bin-val / dec-val / hex-val)
-function numBody(digit: Parser<string>){
-    const d = rep1(digit).map(join);              // 1*DIGIT
-    const range = second(charIs('-'), d);         // "-" 1*DIGIT
-    const seq = rep1(second(charIs('.'), d));     // 1*("." 1*DIGIT)
-    return all(d, optional(or(range, seq)));
-}
+const numBody = (digits: Parser<string>) => {
+    const range = second(charIs('-'), digits);        // "-" 1*DIGIT
+    const seq = rep1(second(charIs('.'), digits));    // 1*("." 1*DIGIT)
+    return all(digits, optional(or(range, seq)));
+};
 
 function toNum(base: string){
     return function(body: any){
@@ -156,9 +160,9 @@ function toNum(base: string){
 }
 
 const numVal = lex(second(charIs('%'), or(
-    second(charIs('b'), numBody(BIT)).map(toNum('b')),
-    second(charIs('d'), numBody(DIGIT)).map(toNum('d')),
-    second(charIs('x'), numBody(HEXDIG)).map(toNum('x'))
+    second(charIs('b'), numBody(BITS)).map(toNum('b')),
+    second(charIs('d'), numBody(DIGITS)).map(toNum('d')),
+    second(charIs('x'), numBody(HEXDIGITS)).map(toNum('x'))
 )));
 
 // defined-as = *c-wsp ("=" / "=/") *c-wsp
@@ -186,18 +190,18 @@ const repeat = or(
             max: v[2] === null ? Infinity : parseInt(v[2].join(''), 10)
         };
     }),
-    rep1(DIGIT).map(function(ds){
-        const n = parseInt(ds.join(''), 10);
+    DIGITS.map(function(s){
+        const n = parseInt(s, 10);
         return { min: n, max: n };
     })
 );
 
 // group = "(" *c-wsp alternation *c-wsp ")"
-groupImpl = lex(between(first(charIs('('), ws), alternation, charIs(')')))
+groupImpl = between(first(charIs('('), ws), alternation, first(charIs(')'), ws))
     .map(function(alt){ return { kind:'group', alt: alt }; });
 
 // option = "[" *c-wsp alternation *c-wsp "]"
-optionImpl = lex(between(first(charIs('['), ws), alternation, charIs(']')))
+optionImpl = between(first(charIs('['), ws), alternation, first(charIs(']'), ws))
     .map(function(alt){ return { kind:'option', alt: alt }; });
 
 // element = rulename / group / option / char-val / num-val / prose-val
