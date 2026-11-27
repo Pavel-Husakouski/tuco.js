@@ -1,6 +1,6 @@
 # CHANGELOG
 
-# version 1.0.0-rc3
+# version 1.0.0
 
 - [ ] 70 [tests] demo grammar: binary (base64url) — parse `binary` / `binaryValue` / `base64*` into a string
 - [ ] 69 [tests] demo grammar: guidValue — parse `8HEXDIG "-" 4HEXDIG "-" 4HEXDIG "-" 4HEXDIG "-" 12HEXDIG` into a string
