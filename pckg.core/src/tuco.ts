@@ -289,10 +289,26 @@ export function word(text: string): Parser<string> {
     "`word` accepts non-empty string",
   );
 
-  if (text.length === 1) return charIs(text);
+  // Match the literal directly against the cursor instead of building one
+  // char parser per character. On failure, report the first mismatch (or the
+  // first character past the end of input) exactly as `charIs` would.
+  return __expose<string>(function (cursor: any) {
+    if (cursor.str.startsWith(text, cursor.pos))
+      return {
+        value: text,
+        rest: { str: cursor.str, pos: cursor.pos + text.length },
+      };
 
-  return __expose<any>(__all(text.split(""))).map(function () {
-    return text;
+    let offset = 0;
+
+    while (
+      offset < text.length &&
+      cursor.pos + offset < cursor.str.length &&
+      cursor.str.charAt(cursor.pos + offset) === text.charAt(offset)
+    )
+      offset += 1;
+
+    return __fail(cursor.pos + offset, '"' + text.charAt(offset) + '"');
   });
 }
 
