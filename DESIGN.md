@@ -22,7 +22,7 @@ A deliberate asymmetry: the single case yields a plain scalar rather than extra 
 
 ## Semantics and limits
 
-- Ordered choice `or` backtracks without memoization: nested or shared-prefix alternatives can cost O(2^k) in the worst case. Keep grammars left-factored and unambiguous.
+- Ordered choice `or` memoizes per parser instance and input position (packrat-style): within a parse of one input, re-entering the same `or` at the same position returns the cached `Success`/`Fail` instead of recomputing it, so shared-prefix alternatives no longer cost O(2^k). Memoization does not rescue left recursion, so keep grammars left-factored and unambiguous.
 - "Character" means a UTF-16 code unit. `charIs` / `charOneOf` / `charExcept` / `charMeets` / `anyChar` / `word` all operate on code units, so a single astral character is two code units — `charIs("😀")` is rejected, while `word("😀")` matches through two units.
 - Parsing is synchronous and unbounded (no limits on input length, depth or time). Callers of untrusted input must bound the length themselves and wrap parsing in `try`/`catch` (or offload it to a worker). `rep1` / `rep0` additionally throw a clear error when their inner parser matches zero width.
 
