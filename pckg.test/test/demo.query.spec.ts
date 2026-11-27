@@ -54,9 +54,7 @@ function toRightArg(v: any) {
 
   const op = v[0];
 
-  op.right = v[1];
-
-  return op;
+  return { ...op, right: v[1] };
 }
 
 function toLeftArg(v: any) {
@@ -64,9 +62,7 @@ function toLeftArg(v: any) {
 
   const op = v[1];
 
-  op.left = v[0];
-
-  return op;
+  return { ...op, left: v[0] };
 }
 
 const spaceConst = " \u00A0,;\n\r\t";
@@ -294,6 +290,38 @@ describe("query errors", function () {
       failed: true,
       pos: 5,
       expected: ["end of input"],
+    });
+  });
+});
+
+describe("projections", function () {
+  it("toRightArg returns a fresh operator", function () {
+    const op = { kind: "AND" };
+    const right = { kind: "word", value: "y" };
+
+    const result = toRightArg([op, right]);
+
+    match({ fresh: result !== op, opKeys: Object.keys(op), result }).with({
+      fresh: true,
+      opKeys: ["kind"],
+      result: { kind: "AND", right: { kind: "word", value: "y" } },
+    });
+  });
+
+  it("toLeftArg returns a fresh operator", function () {
+    const op = { kind: "OR", right: { kind: "word", value: "y" } };
+    const left = { kind: "word", value: "x" };
+
+    const result = toLeftArg([left, op]);
+
+    match({ fresh: result !== op, opKeys: Object.keys(op), result }).with({
+      fresh: true,
+      opKeys: ["kind", "right"],
+      result: {
+        kind: "OR",
+        right: { kind: "word", value: "y" },
+        left: { kind: "word", value: "x" },
+      },
     });
   });
 });
