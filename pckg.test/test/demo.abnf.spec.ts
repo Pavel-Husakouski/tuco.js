@@ -18,7 +18,6 @@ import {
   all,
   between,
   charExcept,
-  charIs,
   charMeets,
   charOneOf,
   first,
@@ -28,7 +27,6 @@ import {
   rep0,
   rep1,
   second,
-  word,
 } from "@beeff/tuco";
 
 // Truthy check, used to assert that a rule name is present in the byName map.
@@ -117,15 +115,15 @@ const ALPHA = charMeets(isAlpha, "ALPHA");
 const DIGIT = charMeets(isDigit, "DIGIT");
 const HEXDIG = charMeets(isHexdig, "HEXDIG");
 const BIT = charOneOf("01");
-const SP = charIs(" ");
-const HTAB = charIs("\t");
+const SP = " ";
+const HTAB = "\t";
 const WSP = or(SP, HTAB);
-const LF = charIs("\n");
-const CRLF = or(word("\r\n"), LF); // simplification: both \r\n and \n
-const DQUOTE = charIs('"');
+const LF = "\n";
+const CRLF = or("\r\n", LF); // simplification: both \r\n and \n
+const DQUOTE = '"';
 
 // ---- whitespace, line breaks, comments ----
-const comment = all(charIs(";"), rep0(charExcept("\n")), CRLF);
+const comment = all(";", rep0(charExcept("\n")), CRLF);
 
 const cNl = or(comment, CRLF); // c-nl = comment / CRLF
 const cWsp = or(WSP, all(cNl, WSP)); // c-wsp = WSP / (c-nl WSP)
@@ -141,11 +139,9 @@ const HEXDIGITS = rep1(HEXDIG).map(join); // 1*HEXDIG
 // ---- atomic tokens ----
 
 // rulename = ALPHA *(ALPHA / DIGIT / "-")
-const rulename = all(ALPHA, rep0(or(ALPHA, DIGIT, charIs("-")))).map(
-  function (v) {
-    return v[0] + (v[1] === null ? "" : v[1].join(""));
-  },
-);
+const rulename = all(ALPHA, rep0(or(ALPHA, DIGIT, "-"))).map(function (v) {
+  return v[0] + (v[1] === null ? "" : v[1].join(""));
+});
 
 // char-val = DQUOTE *(%x20-21 / %x23-7E) DQUOTE
 const charVal = between(DQUOTE, rep0(charExcept('"\n')).map(join), DQUOTE).map(
@@ -155,18 +151,16 @@ const charVal = between(DQUOTE, rep0(charExcept('"\n')).map(join), DQUOTE).map(
 );
 
 // prose-val = "<" *(%x20-3D / %x3F-7E) ">"
-const proseVal = between(
-  charIs("<"),
-  rep0(charExcept(">\n")).map(join),
-  charIs(">"),
-).map(function (s) {
-  return { kind: "prose", value: s };
-});
+const proseVal = between("<", rep0(charExcept(">\n")).map(join), ">").map(
+  function (s) {
+    return { kind: "prose", value: s };
+  },
+);
 
 // num-val = "%" (bin-val / dec-val / hex-val)
 const numBody = (digits: Parser<string>) => {
-  const range = second(charIs("-"), digits); // "-" 1*DIGIT
-  const seq = rep1(second(charIs("."), digits)); // 1*("." 1*DIGIT)
+  const range = second("-", digits); // "-" 1*DIGIT
+  const seq = rep1(second(".", digits)); // 1*("." 1*DIGIT)
   return all(digits, optional(or(range, seq)));
 };
 
@@ -187,16 +181,16 @@ function toNum(base: string) {
 }
 
 const numVal = second(
-  charIs("%"),
+  "%",
   or(
-    second(charIs("b"), numBody(BITS)).map(toNum("b")),
-    second(charIs("d"), numBody(DIGITS)).map(toNum("d")),
-    second(charIs("x"), numBody(HEXDIGITS)).map(toNum("x")),
+    second("b", numBody(BITS)).map(toNum("b")),
+    second("d", numBody(DIGITS)).map(toNum("d")),
+    second("x", numBody(HEXDIGITS)).map(toNum("x")),
   ),
 );
 
 // defined-as = *c-wsp ("=" / "=/") *c-wsp
-const definedAs = between(rep0(cWsp), or(word("=/"), word("=")), rep0(cWsp));
+const definedAs = between(rep0(cWsp), or("=/", "="), rep0(cWsp));
 
 // ---- mutually recursive rules (forward declarations) ----
 let alternationImpl: any = null;
@@ -226,7 +220,7 @@ const option = function (x: string | null) {
 
 // repeat = 1*DIGIT / (*DIGIT "*" *DIGIT)
 const repeat = or(
-  all(rep0(DIGIT), charIs("*"), rep0(DIGIT)).map(function (v) {
+  all(rep0(DIGIT), "*", rep0(DIGIT)).map(function (v) {
     return {
       min: v[0] === null ? 0 : parseInt(v[0].join(""), 10),
       max: v[2] === null ? Infinity : parseInt(v[2].join(""), 10),
@@ -240,18 +234,18 @@ const repeat = or(
 
 // group = "(" *c-wsp alternation *c-wsp ")"
 groupImpl = between(
-  first(charIs("("), rep0(cWsp)),
+  first("(", rep0(cWsp)),
   alternation,
-  second(rep0(cWsp), charIs(")")),
+  second(rep0(cWsp), ")"),
 ).map(function (alt) {
   return { kind: "group", alt: alt };
 });
 
 // option = "[" *c-wsp alternation *c-wsp "]"
 optionImpl = between(
-  first(charIs("["), rep0(cWsp)),
+  first("[", rep0(cWsp)),
   alternation,
-  second(rep0(cWsp), charIs("]")),
+  second(rep0(cWsp), "]"),
 ).map(function (alt) {
   return { kind: "option", alt: alt };
 });
@@ -284,7 +278,7 @@ concatenationImpl = all(repetition, rep0(second(rep1(cWsp), repetition))).map(
 // alternation = concatenation *(*c-wsp "/" *c-wsp concatenation)
 alternationImpl = all(
   concatenation,
-  rep0(second(between(rep0(cWsp), charIs("/"), rep0(cWsp)), concatenation)),
+  rep0(second(between(rep0(cWsp), "/", rep0(cWsp)), concatenation)),
 ).map(function (v) {
   const rest = v[1] === null ? [] : v[1];
   return [v[0]].concat(rest);

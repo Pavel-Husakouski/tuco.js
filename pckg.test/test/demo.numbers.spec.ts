@@ -5,7 +5,7 @@
 */
 
 import { match } from "@beeff/loose-match";
-import { all, charIs, charOneOf, optional, rep1 } from "@beeff/tuco";
+import { all, charOneOf, optional, rep1 } from "@beeff/tuco";
 
 const toString = function (x: any) {
   return x.join("");
@@ -20,7 +20,7 @@ describe("numbers", function () {
     // ["+"|"-"]
     const sign = optional(charOneOf("+-"));
     // ["."[natNumber]]
-    const fraction = optional(all(charIs("."), natNumber)).map(toString);
+    const fraction = optional(all(".", natNumber)).map(toString);
     // [("e"|"E")["+"|"-"]natNumber]
     const exp = optional(all(charOneOf("eE"), sign, natNumber)).map(toString);
     // ["+"|"-"]natNumber["."[natNumber]][("e"|"E")["+"|"-"]natNumber]

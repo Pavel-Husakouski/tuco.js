@@ -17,7 +17,6 @@ import { match } from "@beeff/loose-match";
 import {
   all,
   between,
-  charIs,
   charMeets,
   charOneOf,
   or,
@@ -87,19 +86,16 @@ const foldr = function (v: any) {
 };
 
 // power = atom { '^' atom }   — right-associative
-powerImpl = all(atom, rep0(all(charIs("^"), atom))).map(foldr);
+powerImpl = all(atom, rep0(all("^", atom))).map(foldr);
 
 // unary = '-' unary | power   — unary minus binds looser than ^
-unaryImpl = or(all(charIs("-"), unary), power);
+unaryImpl = or(all("-", unary), power);
 
 // mul = unary { ('*' | '/' | '%') unary }   — left-associative
-mulImpl = all(
-  unary,
-  rep0(all(or(charIs("*"), charIs("/"), charIs("%")), unary)),
-).map(foldl);
+mulImpl = all(unary, rep0(all(or("*", "/", "%"), unary))).map(foldl);
 
 // add = mul { ('+' | '-') mul }   — left-associative
-addImpl = all(mul, rep0(all(or(charIs("+"), charIs("-")), mul))).map(foldl);
+addImpl = all(mul, rep0(all(or("+", "-"), mul))).map(foldl);
 
 exprImpl = add;
 
