@@ -123,7 +123,7 @@ describe("repetition", function () {
     match(result).with({ value: [], rest: "zzz" });
   });
 
-  it("rep0 single not null", function () {
+  it("rep1 single stops at first non-match", function () {
     const parser = rep1(charIs("x"));
     const result = parser("xzzz");
 
@@ -326,14 +326,14 @@ describe("all", function () {
     });
   });
 
-  it("word not null", function () {
+  it("word `text` not null", function () {
     const parser = word("text");
     const result = parser("text and etc.");
 
     match(result).with({ value: "text", rest: " and etc." });
   });
 
-  it("word not null", function () {
+  it("word `test` not null", function () {
     const parser = word("test");
     const result = parser("test and etc.");
 
@@ -391,7 +391,7 @@ describe("all", function () {
     match(result).with({ failed: true });
   });
 
-  it("second implicit `word`", function () {
+  it("first implicit `word`", function () {
     const parser = first("xyz", "/");
     const result = parser("xyz/rest");
 
