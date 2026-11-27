@@ -384,8 +384,33 @@ export function optional<Cs extends Combinator[]>(
   return __expose<any>(__optional(__all(combinators)));
 }
 
-function __or(parsers: any): any {
+// Packrat memo: an `or` is a pure function of the input and the position, so
+// re-entering the same instance at the same position can reuse the result
+// computed earlier instead of re-parsing a shared prefix.  The memo is keyed
+// by position and dropped whenever the input string changes, so an instance
+// stays correct when it is reused for another input.
+function __memoize(run: any): any {
+  let str: any = null;
+  let memo = new Map<number, any>();
+
   return function (cursor: any) {
+    if (__isNil(cursor)) return run(cursor);
+
+    if (cursor.str !== str) {
+      str = cursor.str;
+      memo = new Map();
+    }
+
+    if (memo.has(cursor.pos)) return memo.get(cursor.pos);
+
+    const result = run(cursor);
+    memo.set(cursor.pos, result);
+    return result;
+  };
+}
+
+function __or(parsers: any): any {
+  return __memoize(function (cursor: any) {
     const failures: any[] = [];
 
     for (let i = 0; i < parsers.length; i++) {
@@ -396,7 +421,7 @@ function __or(parsers: any): any {
     }
 
     return __mergeFailures(failures);
-  };
+  });
 }
 
 function __mergeFailures(failures: any): any {

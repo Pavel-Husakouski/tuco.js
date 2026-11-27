@@ -10,6 +10,7 @@ import {
   first,
   optional,
   or,
+  Parser,
   rep0,
   rep1,
   second,
@@ -84,6 +85,36 @@ describe("alternation", function () {
     const result = parser("fourththirdfirstsecond");
 
     match(result).with({ failed: true });
+  });
+
+  it("or reuses shared prefixes instead of backtracking exponentially", function () {
+    // Each level tries the same failing alternative twice.  Without a memo
+    // that is 2^depth leaf evaluations; with it each `or` runs once, so the
+    // leaf is evaluated twice.  The guard turns a regression into a fast
+    // failure instead of an exponential hang.
+    const depth = 32;
+    const limit = 1000;
+    let calls = 0;
+    const leaf = charMeets(function () {
+      calls += 1;
+
+      if (calls > limit) throw new Error("or re-parsed a shared prefix");
+
+      return true;
+    }, "a");
+    let deeper: Parser<any> = leaf;
+
+    for (let i = 0; i < depth; i++) {
+      const inner = deeper;
+      deeper = or(all(inner, charIs("b")), all(inner, charIs("c")));
+    }
+
+    const parser = optional(deeper).map(function () {
+      return calls;
+    });
+    const result = parser("az");
+
+    match(result).with({ value: 2, rest: "az" });
   });
 });
 
