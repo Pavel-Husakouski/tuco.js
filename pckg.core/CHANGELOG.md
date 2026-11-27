@@ -2,6 +2,8 @@
 
 # version 1.0.0-rc3
 
+- [ ] 68 [tests] demo grammar: dateTimeOffsetValue — parse the simplified XML Schema dateTime (date + time + Z/±offset) into `{ year, month, day, hour, minute, second, fractionalSeconds, offset }`
+- [ ] 67 [tests] demo grammar: dayTimeDuration — parse `duration` / `durationValue` (ABNF approximation) into `{ sign, days, hours, minutes, seconds }`
 - [x] 66 [docs] `readme.md` documents only one combinator and links to unshipped `pckg.test/test/demo*.spec.ts` — write a full API reference (signature, value shape, one example per combinator) and note ESM-only + `rep0`→`[]` semantics
 - [x] 65 [feature] Structured diagnostics: `Fail` with `line`/`column` and a `formatFail(fail, input)` renderer (excerpt + caret); keep `{ pos, expected[] }` backward-compatible
 - [x] 64 [bug] `optional`/`rep0`/`or` discard inner failures — keep a furthest-failure accumulator so errors point at the real position instead of degrading to `end of input`
