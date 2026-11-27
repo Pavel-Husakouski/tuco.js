@@ -279,8 +279,8 @@ describe("query errors", function () {
 
     match(result).with({
       failed: true,
-      pos: 0,
-      expected: ["end of input"],
+      pos: 5,
+      expected: ['"""'],
     });
   });
 
@@ -289,8 +289,8 @@ describe("query errors", function () {
 
     match(result).with({
       failed: true,
-      pos: 5,
-      expected: ["end of input"],
+      pos: 6,
+      expected: ['")"'],
     });
   });
 });

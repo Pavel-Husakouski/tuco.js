@@ -8,6 +8,7 @@ import {
   charMeets,
   charOneOf,
   defer,
+  eof,
   first,
   MAX_INPUT_LENGTH,
   MAX_PARSE_DEPTH,
@@ -606,6 +607,20 @@ describe("errors", function () {
     const result = parser("ab");
 
     match(result).with({ failed: true, pos: 2, expected: ['"c"'] });
+  });
+
+  it("optional keeps a deeper inner failure instead of `end of input`", function () {
+    const parser = all(optional(word("abc")), eof());
+    const result = parser("abx");
+
+    match(result).with({ failed: true, pos: 2, expected: ['"c"'] });
+  });
+
+  it("rep0 keeps a deeper inner failure instead of `end of input`", function () {
+    const parser = all(rep0(word("ab")), eof());
+    const result = parser("abax");
+
+    match(result).with({ failed: true, pos: 3, expected: ['"b"'] });
   });
 });
 

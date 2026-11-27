@@ -119,20 +119,32 @@ function __run(parser: (cursor: Cursor) => any, cursor: any): any {
   }
 }
 
+// The furthest failure seen during the current top-level parse.  Backtracking
+// combinators (`optional`, `rep0`, `or`) recover from a failure and try
+// another path; remembering the deepest one lets the final error point at the
+// real position instead of degrading to a shallower one (often
+// `end of input`).  It is reset at the top-level boundary in `__expose`.
+let __furthest: Fail | null = null;
+
 function __expose<T>(parser: (cursor: Cursor) => any): Parser<T> {
   const exposed = function (rest: any): any {
     if (__isCursor(rest)) return __run(parser, rest);
 
+    const own = __budget === null;
     const cursor = __toCursor(rest);
 
-    if (cursor.str.length > MAX_INPUT_LENGTH)
+    if (cursor.str.length > MAX_INPUT_LENGTH) {
+      if (own) __furthest = null;
       return __fail(cursor.pos, __INPUT_LIMIT_EXPECTED, true);
+    }
 
-    const own = __budget === null;
-    if (own) __budget = { steps: 0, depth: 0, pos: cursor.pos };
+    if (own) {
+      __budget = { steps: 0, depth: 0, pos: cursor.pos };
+      __furthest = null;
+    }
 
     try {
-      return __materialize(__run(parser, cursor));
+      return __materialize(__withFurthestFailure(__run(parser, cursor)));
     } catch (e) {
       if (!(e instanceof RangeError)) throw e;
 
@@ -171,15 +183,35 @@ function __map(parser: any, projection: any): any {
 }
 
 function __fail(pos: number, expected: any, limit?: boolean): Fail {
-  const fail: Fail = {
+  const failure: Fail = {
     failed: true,
     pos: pos,
     expected: Array.isArray(expected) ? expected : [expected],
   };
 
-  if (limit === true) fail.limit = true;
+  if (limit === true) failure.limit = true;
+  else __recordFailure(failure);
 
-  return fail;
+  return failure;
+}
+
+function __recordFailure(failure: Fail): void {
+  // At equal positions the latest failure wins: a parser may replace a
+  // low-level failure with a more precise one (e.g. `charMeets` over
+  // `anyChar`).  Alternatives union their expectations in `__mergeFailures`.
+  if (__furthest === null || failure.pos >= __furthest.pos)
+    __furthest = failure;
+}
+
+// When the parse fails, report the furthest failure seen during it: a deeper
+// failure recovered by backtracking is more informative than a shallow final
+// one.  Equal positions merge their expectations (see `__mergeFailures`).
+// Resource-limit failures are terminal and must surface unchanged.
+function __withFurthestFailure(result: any): any {
+  if (!__isFail(result) || __isLimit(result) || __furthest === null)
+    return result;
+
+  return __mergeFailures([result, __furthest]);
 }
 
 function __isFail(r: any): r is Fail {
@@ -498,7 +530,16 @@ function __memoize(run: any): any {
       memo = new Map();
     }
 
-    if (memo.has(cursor.pos)) return memo.get(cursor.pos);
+    if (memo.has(cursor.pos)) {
+      const cached = memo.get(cursor.pos);
+
+      // `__furthest` is per top-level parse, while the memo outlives it; a
+      // replayed failure must be recorded again or the deepest position would
+      // be lost on a repeat parse of the same input.
+      if (__isFail(cached) && !__isLimit(cached)) __recordFailure(cached);
+
+      return cached;
+    }
 
     const result = run(cursor);
     memo.set(cursor.pos, result);
