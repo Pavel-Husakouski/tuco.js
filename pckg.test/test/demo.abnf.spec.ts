@@ -292,7 +292,10 @@ const rulelist = first(rep1(or(rule, blankLine)), rep0(cWsp)).map(
 
 // ---- tests ----
 function byName(rules: any[]) {
-  const map: any = {};
+  // Grammar-controlled names can be `__proto__` or `constructor`, so the
+  // lookup must not inherit from Object.prototype: a plain `{}` would let
+  // `__proto__` replace the prototype instead of creating a real key.
+  const map: any = Object.create(null);
   rules.forEach(function (r: any) {
     map[r.name] = r;
   });
@@ -326,6 +329,18 @@ describe("abnf (meta-demo)", function () {
       "num-val": truthy,
       "prose-val": truthy,
     });
+  });
+
+  it("keys rule names safely, even __proto__ and constructor", function () {
+    const result = rulelist('constructor = "a"\n');
+    if ("failed" in result) throw new Error("expected success");
+    const map = byName([result.value[0], { name: "__proto__", alt: [] }]);
+    match([
+      map.constructor.name,
+      map["__proto__"].name,
+      Object.getPrototypeOf(map) === null,
+      Object.prototype.hasOwnProperty.call(Object.prototype, "name"),
+    ]).with(["constructor", "__proto__", true, false]);
   });
 
   it("parses CRLF as the concatenation CR LF", function () {
