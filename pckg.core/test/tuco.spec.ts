@@ -7,7 +7,10 @@ import {
   charIs,
   charMeets,
   charOneOf,
+  defer,
   first,
+  MAX_INPUT_LENGTH,
+  MAX_PARSE_DEPTH,
   optional,
   or,
   Parser,
@@ -624,6 +627,74 @@ describe("array detection", function () {
         );
       }),
     });
+  });
+});
+
+describe("limits", function () {
+  it("rejects input longer than the cap", function () {
+    const parser = anyChar();
+    const result = parser("x".repeat(MAX_INPUT_LENGTH + 1));
+
+    match(result).with({
+      failed: true,
+      pos: 0,
+      expected: ["input length exceeds " + MAX_INPUT_LENGTH],
+      limit: true,
+    });
+  });
+
+  it("fails when the depth budget is exceeded", function () {
+    const deep: Parser<any> = defer(function () {
+      return or(all(charIs("a"), deep), word("a"));
+    });
+
+    const result = deep("a".repeat(MAX_PARSE_DEPTH));
+
+    match(result).with({
+      failed: true,
+      expected: ["parse depth budget exceeded"],
+      limit: true,
+    });
+  });
+
+  it("fails when the step budget is exceeded", function () {
+    // Every repetition burns many parser calls (twenty optional attempts plus
+    // one consumed character), so a bounded input still exhausts the budget.
+    const filler: Parser<any>[] = [];
+    for (let i = 0; i < 20; i++) filler.push(optional(word("x")));
+    const parser = rep1(all(...filler, charIs("a")));
+
+    const result = parser("a".repeat(MAX_INPUT_LENGTH / 2));
+
+    match(result).with({
+      failed: true,
+      expected: ["parse step budget exceeded"],
+      limit: true,
+    });
+  });
+
+  it("turns a RangeError into a fail", function () {
+    const parser = charMeets(function () {
+      throw new RangeError("stack overflow");
+    });
+    const result = parser("x");
+
+    match(result).with({
+      failed: true,
+      pos: 0,
+      expected: ["parser runtime overflow"],
+      limit: true,
+    });
+  });
+
+  it("still throws on a zero-width repetition", function () {
+    const parser = rep1(optional(charIs("x")));
+
+    match(
+      thrown(function () {
+        parser("");
+      }),
+    ).with(instanceOf(Error, { message: re(/matched empty input/) }));
   });
 });
 
