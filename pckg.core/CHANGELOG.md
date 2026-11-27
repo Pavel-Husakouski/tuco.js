@@ -2,6 +2,8 @@
 
 # version 1.0.0-rc3
 
+- [ ] 70 [tests] demo grammar: binary (base64url) — parse `binary` / `binaryValue` / `base64*` into a string
+- [ ] 69 [tests] demo grammar: guidValue — parse `8HEXDIG "-" 4HEXDIG "-" 4HEXDIG "-" 4HEXDIG "-" 12HEXDIG` into a string
 - [ ] 68 [tests] demo grammar: dateTimeOffsetValue — parse the simplified XML Schema dateTime (date + time + Z/±offset) into `{ year, month, day, hour, minute, second, fractionalSeconds, offset }`
 - [ ] 67 [tests] demo grammar: dayTimeDuration — parse `duration` / `durationValue` (ABNF approximation) into `{ sign, days, hours, minutes, seconds }`
 - [x] 66 [docs] `readme.md` documents only one combinator and links to unshipped `pckg.test/test/demo*.spec.ts` — write a full API reference (signature, value shape, one example per combinator) and note ESM-only + `rep0`→`[]` semantics

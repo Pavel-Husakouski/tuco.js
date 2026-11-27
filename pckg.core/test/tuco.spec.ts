@@ -1,4 +1,4 @@
-import { instanceOf, match, predicate, re } from "@beeff/loose-match";
+import { instanceOf, match, predicate, re } from '@beeff/loose-match';
 import {
   all,
   anyChar,
@@ -20,7 +20,7 @@ import {
   rep1,
   second,
   word,
-} from "../src/index.js";
+} from '../src/index.js';
 
 // Returns the error thrown by fn, or null when it does not throw.
 function thrown(fn: Function) {
@@ -100,14 +100,13 @@ describe("alternation", function () {
     const depth = 32;
     const limit = 1000;
     let calls = 0;
-    const leaf = charMeets(function () {
+    let deeper: Parser<any> = charMeets(function () {
       calls += 1;
 
       if (calls > limit) throw new Error("or re-parsed a shared prefix");
 
       return true;
     }, "a");
-    let deeper: Parser<any> = leaf;
 
     for (let i = 0; i < depth; i++) {
       const inner = deeper;
@@ -328,7 +327,7 @@ describe("charXXX", function () {
   });
 
   it("charMeets null", function () {
-    const parser = charMeets(function (ch) {
+    const parser = charMeets(function () {
       return false;
     });
     const result = parser("xyz");

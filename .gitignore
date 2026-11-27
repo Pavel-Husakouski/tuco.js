@@ -7,3 +7,4 @@ dist
 *.orig
 test-reports
 lib
+.claude/worktrees
