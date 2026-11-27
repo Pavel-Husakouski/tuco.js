@@ -1,10 +1,10 @@
 import { match } from "@beeff/loose-match";
 import { all, defer, optional, Parser } from "@beeff/tuco";
 
-function toString(x: any) {
+const toString = function (x: any) {
   if (x === null || typeof x === "string") return x;
   return x.join("");
-}
+};
 
 describe("recursive", function () {
   it("S = '(', [S], ')', [S]", function () {

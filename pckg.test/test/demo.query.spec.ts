@@ -32,38 +32,38 @@ import {
 
 const opt = optional;
 
-function toString(x: any) {
+const toString = function (x: any) {
   if (typeof x === "string") return x;
   return x.join("");
-}
+};
 
-function toWord(v: any) {
+const toWord = function (v: any) {
   return { kind: "word", value: toString(v) };
-}
+};
 
-function toVerbatim(v: any) {
+const toVerbatim = function (v: any) {
   return { kind: "verbatim", value: toString(v) };
-}
+};
 
-function toOperator(v: any) {
+const toOperator = function (v: any) {
   return { kind: v === null ? "AND" : v };
-}
+};
 
-function toRightArg(v: any) {
+const toRightArg = function (v: any) {
   if (v === null) return v;
 
   const op = v[0];
 
   return { ...op, right: v[1] };
-}
+};
 
-function toLeftArg(v: any) {
+const toLeftArg = function (v: any) {
   if (v[1] === null) return v[0];
 
   const op = v[1];
 
   return { ...op, left: v[0] };
-}
+};
 
 const spaceConst = " \u00A0,;\n\r\t";
 const specialConst = '"()';
@@ -105,7 +105,7 @@ queryImpl = between(opt(space), opt(or(shapedLogic, logic)), opt(space));
 
 const parseQuery = complete(query);
 
-function buildClauses(result: any): any[] {
+const buildClauses = function (result: any): any[] {
   if (result === null) return [];
 
   if (result.kind === "word" || result.kind === "verbatim")
@@ -115,13 +115,15 @@ function buildClauses(result: any): any[] {
     return buildClauses(result.left).concat(buildClauses(result.right));
 
   throw new Error("wrong kind");
-}
+};
 
-function queryValue(text: string): any {
+// Narrow a successful parse result down to its value; the guard is not a
+// matcher, so a test that uses it still has exactly one `match(...).with(...)`.
+const queryValue = function (text: string): any {
   const result = query(text);
   if ("failed" in result) throw new Error("expected success");
   return result.value;
-}
+};
 
 describe("query", function () {
   it("big", function () {
@@ -129,9 +131,7 @@ describe("query", function () {
       'bamboo OR (join AND ")quted test laenin,()!" bbq) AND "" OR ncx AND pgt',
     );
 
-    if ("failed" in result) throw new Error("expected success");
-
-    match(result.rest).with("");
+    match(result).with({ rest: "" });
   });
 
   it("simple", function () {
