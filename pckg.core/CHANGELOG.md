@@ -1,19 +1,35 @@
 # CHANGELOG
 
-# version 1.0.0
+# version 1.0.0-rc3
 
+- [x] 53 [bug] `rep1`/`rep0`: iterative rewrite + progress guard — fixes the O(n²) `concat` rebuild, the ~5k-item stack overflow, and zero-width parsers looping forever
+- [x] 52 [breaking] `Combinator`/`Parser` contract lies: combinators receive an internal `Cursor`, not the declared `string|null` — restrict `Combinator` to `string | Parser<A>` and add `defer` (option C); hand-written raw functions no longer accepted
+- [x] 51 [bug] `optional(...)(null)`/`rep0(...)(null)` throw `TypeError`; normalize `null` to an empty cursor in `__toCursor`
+- [x] 50 [bug] `charMeets` reports `"any character"` at EOF instead of its own `expected`
+- [x] 49 [types] `ValueOf` falls back to `any` for function combinators; infer structurally with a `never` fallback and drop the dead `Combinator<A>` param
+- [x] 48 [feature] add `defer`/`lazy` (typed mutual recursion, no `let xImpl: any`) and `eof`/`complete` (replace the `parseQuery` leftover-input workaround)
+- [x] 47 [breaking] `rep0` returns `[]` for zero matches instead of `null`; reserve `null` for `optional`
+- [x] 46 [build] packaging: add `exports` map, `prepack`/`prepublishOnly`, `inlineSources`; fix `test:test` to build core first
+- [x] 45 [tests] cover custom combinators in composition, `null` input for every family, EOF `expected`, argument-validation guards; de-flake order-dependent `rules` in `demo.abnf`
+- [x] 44 [design] `or` backtracking is exponential (2^k on shared prefixes) without memoization; document/guard
+- [x] 43 [design] `__expose` mutates an enumerable `.map` + `as unknown as Parser<T>`; build the record properly
+- [x] 42 [design] remove implicit string→word coercion and dead `__builtin` branches; `first`/`second`/`between` via typed projections instead of `indexToTake`
+- [x] 41 [docs] align CHANGELOG marker with `package.json` (still RC); fix stale refs (`npm run typecheck`, `README.md`→`readme.md`, old file names, "107 passing"→99)
+- [x] 40 [var] strict equality `===`/`!==` per DESIGN.md:43 (`ch == chr`, length/index null-checks); keep `x == null` as an explicit null-or-undefined check
+- [x] 39 [bug] `.map` runs on `optional`/`rep0`'s `null`; `demo.numbers` crashes on plain `"42"` — null-safe projection or skip projection on null
+- [x] 38 [docs] document UTF-16 code-unit semantics and the trust model (synchronous, no input/depth/time bounds)
 - [x] 37 [breaking] Remove `foldLeft`/`foldRight` from the API (and internal `__chain`/`__defaultApply`/`__foldl`/`__foldr`); the calculator demo folds `[op, a, b]` chains via `all`/`rep0` + a local fold; drop the core `foldLeft`/`foldRight` tests; update the default export and rebuild `lib/`
-- [x] 36 [build] Add publish files to `package.json` `files`: `lib`, `README.md`, `CHANGELOG.md`, `LICENSE`
+- [x] 36 [build] Add publish files to `package.json` `files`: `lib`, `readme.md`, `CHANGELOG.md`, `LICENSE`
 - [x] 35 [docs] Rename `TODO.md` to `CHANGELOG.md` and update the references in `CLAUDE.md` (section header + text) and the self-references in the changelog
 - [x] 34 [tests] Replace `node:assert` (`deepEqual`/`strictEqual`/`assert`/`throws`) with `@beeff/loose-match` matchers in every test: one `match(...).with(...)` per test; add `@beeff/loose-match` to devDeps; rewrite the `DESIGN.md` test-style section
-- [x] 33 [docs] Translate `.md` files to English (`DESIGN.md`, `CHANGELOG.md`, `CLAUDE.md`; `README.md` was already English) and document the language rule + `CHANGELOG.md` workflow in `CLAUDE.md`
-- [x] 32 [docs] Translate the remaining Russian comments to English: `test/demo.abnf.ts` (header, inline, `;`-comments inside `source`), `test/demo.calculator.test.ts` (header + inline), `test/demo.query.test.ts` (op0/op1 precedence block); `src/` is already English; `DESIGN.md`/`CHANGELOG.md`/`CLAUDE.md` — docs/backlog/instructions, untouched
+- [x] 33 [docs] Translate `.md` files to English (`DESIGN.md`, `CHANGELOG.md`, `CLAUDE.md`; `readme.md` was already English) and document the language rule + `CHANGELOG.md` workflow in `CLAUDE.md`
+- [x] 32 [docs] Translate the remaining Russian comments to English: `test/demo.abnf.spec.ts` (header, inline, `;`-comments inside `source`), `test/demo.calculator.spec.ts` (header + inline), `test/demo.query.spec.ts` (op0/op1 precedence block); `src/` is already English; `DESIGN.md`/`CHANGELOG.md`/`CLAUDE.md` — docs/backlog/instructions, untouched
 - [x] 31 [breaking] Replace `chain`/`foldl`/`foldr` with `foldLeft`/`foldRight` (chain+fold in one step, no `[head, pairs]` leak); `chain`/`foldl`/`foldr` become internal `__*`; update demos/tests and the default export; two overloads (default tree → `Parser<any>`, custom `apply` → `Parser<A>`)
 - [x] 30 [types] Type `foldl`/`foldr` (option 1): input `(value: [V, [P, V][]]) => any`; `apply` with `op: P`, `left`/`right` by meaning (operand `V` / accumulator `any`); the result stays `any`; defaults `V = any`, `P = any`
 - [x] 29 [types] Remove `Parser<any>` via variadic-tuple inference (no overloads): `Combinator<A>` + helpers `ValueOf`/`ValuesOf`/`ScalarOrTuple`/`RepValue`; one generic signature per combinator (`all`/`first`/`second`/`between`/`rep1`/`rep0`/`optional`/`or`/`chain`); leave the bodies unchanged (`__expose<any>` is already compatible — signatures only); leave `char*`/`word` — already `Parser<string>`
 - [x] 28 [docs] Compact JSDoc comments for the 17 public functions of `src/tuco.ts` (in English); translate the Russian `__all` comment (arity asymmetry) to English
-- [x] 27 [verify] `npm run typecheck` (clean), `npm test` (107 passing), `npm run build` → `lib/`, sanity-import `lib/tuco.js`
-- [x] 26 [docs] `README.md`: remove `gulp`, describe `npm install`/`npm test`/`npm run build`/`npm run typecheck`
+- [x] 27 [verify] `npm run build:test -w pckg.core` (clean), `npm test` (99 passing), `npm run build` → `lib/`, sanity-import `lib/tuco.js`
+- [x] 26 [docs] `readme.md`: remove `gulp`, describe `npm install`/`npm test`/`npm run build`/`npm run build:test -w pckg.core`
 - [x] 25 [var] `var` → `const`/`let` in `src/` and `test/`; update `DESIGN.md` (style `var` → `const`/`let`, assert example → `deepEqual`)
 - [x] 24 [tests] `test/*.js` → `test/*.ts`: import `../src/tuco.ts`; assert via `deepEqual`/`'failed' in r`; forward decls `: any`; `.mocharc.cjs` → `test/*.ts`
 - [x] 23 [lib] `tuco.js` → `src/tuco.ts`: types `Cursor`/`Fail`/`Success`/`Result`/`Parser`, rest parameters instead of `arguments`, type-only export of types, public API unchanged (default object + 17 named)

@@ -1,5 +1,5 @@
 import { match } from "@beeff/loose-match";
-import { all, optional, Parser } from "@beeff/tuco";
+import { all, defer, optional, Parser } from "@beeff/tuco";
 
 function toString(x: any) {
   if (x === null || typeof x === "string") return x;
@@ -8,16 +8,13 @@ function toString(x: any) {
 
 describe("recursive", function () {
   it("S = '(', [S], ')', [S]", function () {
+    const s = defer(() => sImpl);
     const sImpl: Parser<any> = all(
       "(",
       optional(s).map(toString),
       ")",
       optional(s).map(toString),
     ).map(toString);
-
-    function s(x: string | null) {
-      return sImpl(x);
-    }
 
     const inputs = [
       "()",

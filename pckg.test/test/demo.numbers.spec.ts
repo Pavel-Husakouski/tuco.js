@@ -8,26 +8,44 @@ import { match } from "@beeff/loose-match";
 import { all, charOneOf, optional, rep1 } from "@beeff/tuco";
 
 const toString = function (x: any) {
-  return x.join("");
+  return x === null ? "" : x.join("");
 };
+
+// digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
+const digit = charOneOf("0123456789");
+// natNumber = digit{digit}
+const natNumber = rep1(digit).map(toString);
+// ["+"|"-"]
+const sign = optional(charOneOf("+-"));
+// ["."[natNumber]]
+const fraction = optional(all(".", natNumber)).map(toString);
+// [("e"|"E")["+"|"-"]natNumber]
+const exp = optional(all(charOneOf("eE"), sign, natNumber)).map(toString);
+// ["+"|"-"]natNumber["."[natNumber]][("e"|"E")["+"|"-"]natNumber]
+const number = all(sign, natNumber, fraction, exp).map(toString);
 
 describe("numbers", function () {
   it("numbers not null", function () {
-    // digit = "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
-    const digit = charOneOf("0123456789");
-    // natNumber = digit{digit}
-    const natNumber = rep1(digit).map(toString);
-    // ["+"|"-"]
-    const sign = optional(charOneOf("+-"));
-    // ["."[natNumber]]
-    const fraction = optional(all(".", natNumber)).map(toString);
-    // [("e"|"E")["+"|"-"]natNumber]
-    const exp = optional(all(charOneOf("eE"), sign, natNumber)).map(toString);
-    // ["+"|"-"]natNumber["."[natNumber]][("e"|"E")["+"|"-"]natNumber]
-    const number = all(sign, natNumber, fraction, exp).map(toString);
-
     const result = number("-012.12E-10zzzzz");
 
     match(result).with({ value: "-012.12E-10", rest: "zzzzz" });
+  });
+
+  it("plain integer", function () {
+    const result = number("42");
+
+    match(result).with({ value: "42", rest: "" });
+  });
+
+  it("decimal fraction", function () {
+    const result = number("42.5");
+
+    match(result).with({ value: "42.5", rest: "" });
+  });
+
+  it("exponent without fraction", function () {
+    const result = number("1e10");
+
+    match(result).with({ value: "1e10", rest: "" });
   });
 });

@@ -20,6 +20,12 @@ Internally parsing works with a cursor `{ str, pos }` (no substring copying), wh
 
 A deliberate asymmetry: the single case yields a plain scalar rather than extra nesting. Unifying (always an array) would be more regular, but would bring `[[x]]` noise to the single case.
 
+## Semantics and limits
+
+- Ordered choice `or` backtracks without memoization: nested or shared-prefix alternatives can cost O(2^k) in the worst case. Keep grammars left-factored and unambiguous.
+- "Character" means a UTF-16 code unit. `charIs` / `charOneOf` / `charExcept` / `charMeets` / `anyChar` / `word` all operate on code units, so a single astral character is two code units — `charIs("😀")` is rejected, while `word("😀")` matches through two units.
+- Parsing is synchronous and unbounded (no limits on input length, depth or time). Callers of untrusted input must bound the length themselves and wrap parsing in `try`/`catch` (or offload it to a worker). `rep1` / `rep0` additionally throw a clear error when their inner parser matches zero width.
+
 ## Test style
 
 Tests follow one pattern: first declare the parser, then run it and save the result, then check it with a single asymmetric matcher — exactly one `match(...).with(...)` per test.
@@ -40,7 +46,7 @@ An object schema checks only the listed properties, so a test states exactly wha
 
 Rules:
 
-1. **Strict equality** — only `===` / `!==`, never `==` / `!=`.
+1. **Strict equality** — only `===` / `!==`, never `==` / `!=`; the one allowed nullish spelling is the explicit `x === null || x === undefined` (or a tiny `__isNil` helper).
 2. **`const` by default.** Parsers, grammars, predicates, helpers and imports are assigned once, so they are declared with `const`:
    ```ts
    const parser = or(word("first"), word("second"));

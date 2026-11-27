@@ -6,14 +6,13 @@ export interface Parser<T> {
   (input: string | null): Result<T>;
   map<U>(projection: (value: T) => U): Parser<U>;
 }
-export type Combinator<A = any> =
-  string | ((input: string | null) => Result<A>);
+export type Combinator = string | Parser<unknown>;
 
 export type ValueOf<C> = C extends string
   ? string
   : C extends Parser<infer A>
     ? A
-    : any;
+    : never;
 
 export type ValuesOf<Cs extends Combinator[]> = {
   [K in keyof Cs]: ValueOf<Cs[K]>;
@@ -32,22 +31,28 @@ export type RepValue<Cs extends Combinator[]> = Cs extends [infer C]
 // O(n^2).  A failed parse carries the position it stopped at and what it
 // expected there, instead of a bare `null`.
 
+// Explicit null-or-undefined check (allowed spelling, see DESIGN.md).
+function __isNil(x: any): boolean {
+  return x === null || x === undefined;
+}
+
 function __isCursor(x: any): boolean {
   return (
-    x != null &&
+    !__isNil(x) &&
     typeof x === "object" &&
     __isString(x.str) &&
     typeof x.pos === "number"
   );
 }
 
-function __toCursor(rest: any): any {
-  if (__isCursor(rest) || rest == null) return rest;
+function __toCursor(rest: any): Cursor {
+  if (__isCursor(rest)) return rest;
+  if (__isNil(rest)) return { str: "", pos: 0 };
   return { str: rest, pos: 0 };
 }
 
 function __materialize(result: any): any {
-  if (result == null || __isFail(result)) return result;
+  if (__isNil(result) || __isFail(result)) return result;
   return { value: result.value, rest: result.rest.str.slice(result.rest.pos) };
 }
 
@@ -56,10 +61,17 @@ function __expose<T>(parser: (cursor: Cursor) => any): Parser<T> {
     if (__isCursor(rest)) return parser(rest);
     return __materialize(parser(__toCursor(rest)));
   } as unknown as Parser<T>;
-  exposed.map = function <U>(projection: (value: T) => U): Parser<U> {
-    return __expose<U>(__map(parser, projection));
-  };
-  return exposed;
+
+  Object.defineProperty(exposed, "map", {
+    value: function <U>(projection: (value: T) => U): Parser<U> {
+      return __expose<U>(__map(parser, projection));
+    },
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+
+  return exposed as unknown as Parser<T>;
 }
 
 function __map(parser: any, projection: any): any {
@@ -83,7 +95,7 @@ function __fail(pos: number, expected: any): Fail {
 }
 
 function __isFail(r: any): r is Fail {
-  return r != null && r.failed === true;
+  return !__isNil(r) && r.failed === true;
 }
 
 function __expect(checkResult: any, msg: string): void {
@@ -122,7 +134,7 @@ export function charIs(chr: string): Parser<string> {
 
   return charMeets(
     function (ch) {
-      return ch == chr;
+      return ch === chr;
     },
     '"' + chr + '"',
   );
@@ -138,11 +150,12 @@ export function charMeets(
   return __expose<string>(function (cursor: any) {
     const result = __anyChar(cursor);
 
-    if (__isFail(result)) return result;
+    if (__isFail(result))
+      return __fail(cursor.pos, __isNil(expected) ? "any character" : expected);
     if (!predicate(result.value))
       return __fail(
         cursor.pos,
-        expected == null ? "char matching predicate" : expected,
+        __isNil(expected) ? "char matching predicate" : expected,
       );
     return result;
   });
@@ -154,8 +167,8 @@ export function anyChar(): Parser<string> {
 }
 
 function __anyChar(cursor: any): any {
-  if (cursor == null || cursor.pos >= cursor.str.length)
-    return __fail(cursor == null ? 0 : cursor.pos, "any character");
+  if (__isNil(cursor) || cursor.pos >= cursor.str.length)
+    return __fail(__isNil(cursor) ? 0 : cursor.pos, "any character");
 
   return {
     value: cursor.str.charAt(cursor.pos),
@@ -176,15 +189,15 @@ export function all<Cs extends Combinator[]>(
 }
 
 function __isChar(arg: any): boolean {
-  return typeof arg == "string" && arg.length == 1;
+  return typeof arg === "string" && arg.length === 1;
 }
 
 function __isString(arg: any): boolean {
-  return typeof arg == "string";
+  return typeof arg === "string";
 }
 
 function __isFunction(arg: any): boolean {
-  return typeof arg == "function";
+  return typeof arg === "function";
 }
 
 function __areCombinators(array: any): boolean {
@@ -194,16 +207,10 @@ function __areCombinators(array: any): boolean {
 }
 
 function __isArray(arg: any): boolean {
-  return Object.prototype.toString.call(arg) == "[object Array]";
+  return Object.prototype.toString.call(arg) === "[object Array]";
 }
 
 function __builtin(parsers: any): any {
-  if (__isString(parsers)) return word(parsers);
-
-  if (!__isArray(parsers)) {
-    return parsers;
-  }
-
   return parsers.map(function (parser: any) {
     if (__isString(parser)) return word(parser);
 
@@ -211,13 +218,13 @@ function __builtin(parsers: any): any {
   });
 }
 
-function __all(combinators: any, indexToTake?: any): any {
+function __all(combinators: any): any {
   const parsers = __builtin(combinators);
 
   // A single combinator is returned unwrapped, so the value is a scalar
   // rather than an array. Hence `optional(a)` → scalar, `optional(a, b)` →
   // [va, vb]; the same applies to rep1/rep0 (see DESIGN.md).
-  if (parsers.length == 1) return parsers[0];
+  if (parsers.length === 1) return parsers[0];
 
   return function (cursor: any) {
     const results: any[] = [];
@@ -232,7 +239,7 @@ function __all(combinators: any, indexToTake?: any): any {
     }
 
     return {
-      value: indexToTake == null ? results : results[indexToTake],
+      value: results,
       rest: result.rest,
     };
   };
@@ -245,7 +252,9 @@ export function first<A extends Combinator, B extends Combinator>(
 ): Parser<ValueOf<A>> {
   __expect(__areCombinators([a, b]), "`first` accepts two combinators");
 
-  return __expose<any>(__all([a, b], 0));
+  return all(a, b).map(function (v) {
+    return v[0];
+  });
 }
 
 /** Matches `a` then `b`; returns `b`'s value. */
@@ -255,7 +264,9 @@ export function second<A extends Combinator, B extends Combinator>(
 ): Parser<ValueOf<B>> {
   __expect(__areCombinators([a, b]), "`second` accepts two combinators");
 
-  return __expose<any>(__all([a, b], 1));
+  return all(a, b).map(function (v) {
+    return v[1];
+  });
 }
 
 /** Matches `a`, `b`, `c` in order; returns `b`'s value. */
@@ -266,7 +277,9 @@ export function between<
 >(a: A, b: B, c: C): Parser<ValueOf<B>> {
   __expect(__areCombinators([a, b, c]), "`between` accepts three combinators");
 
-  return __expose<any>(__all([a, b, c], 1));
+  return all(a, b, c).map(function (v) {
+    return v[1];
+  });
 }
 
 /** Matches the literal string `text`. */
@@ -276,7 +289,7 @@ export function word(text: string): Parser<string> {
     "`word` accepts non-empty string",
   );
 
-  if (text.length == 1) return charIs(text);
+  if (text.length === 1) return charIs(text);
 
   return __expose<any>(__all(text.split(""))).map(function () {
     return text;
@@ -285,16 +298,23 @@ export function word(text: string): Parser<string> {
 
 function __rep1(parser: any): any {
   return function (cursor: any) {
-    const result1 = parser(cursor);
+    const value: any[] = [];
+    let rest = cursor;
 
-    if (__isFail(result1)) return result1;
+    for (;;) {
+      const result = parser(rest);
 
-    const result0 = __rep0(parser)(result1.rest);
-    const value = [result1.value].concat(
-      result0.value == null ? [] : result0.value,
-    );
+      if (__isFail(result)) {
+        if (value.length === 0) return result;
+        return { value: value, rest: rest };
+      }
 
-    return { value: value, rest: result0.rest };
+      if (result.rest.pos === rest.pos)
+        throw new Error("repetition parser matched empty input");
+
+      value.push(result.value);
+      rest = result.rest;
+    }
   };
 }
 
@@ -311,13 +331,19 @@ export function rep1<Cs extends Combinator[]>(
 }
 
 function __rep0(parser: any): any {
-  return __optional(__rep1(parser));
+  const rep = __rep1(parser);
+
+  return function (cursor: any) {
+    const result = rep(cursor);
+
+    return __isFail(result) ? { value: [], rest: cursor } : result;
+  };
 }
 
-/** Zero or more repetitions; a single combinator yields a flat array (or null), several yield a list of pairs. */
+/** Zero or more repetitions; a single combinator yields a flat array, several yield a list of pairs. */
 export function rep0<Cs extends Combinator[]>(
   ...combinators: Cs
-): Parser<RepValue<Cs> | null> {
+): Parser<RepValue<Cs>> {
   __expect(
     __areCombinators(combinators) && combinators.length >= 1,
     "`rep0` accepts at least one combinator",
@@ -395,6 +421,29 @@ export function or<Cs extends Combinator[]>(
   return __expose<any>(__or(__builtin(combinators)));
 }
 
+/** Defers parser creation until first use, enabling (mutual) recursion. */
+export function defer<T>(thunk: () => Parser<T>): Parser<T> {
+  __expect(__isFunction(thunk), "`defer` accepts a thunk function");
+
+  return __expose<T>(function (cursor: any) {
+    return thunk()(cursor);
+  });
+}
+
+/** Succeeds with `null` only at end of input; otherwise fails at the current position. */
+export function eof(): Parser<null> {
+  return __expose<null>(function (cursor: any) {
+    return cursor.pos >= cursor.str.length
+      ? { value: null, rest: cursor }
+      : __fail(cursor.pos, "end of input");
+  });
+}
+
+/** Matches `parser` and then requires the end of input, returning `parser`'s value. */
+export function complete<T>(parser: Parser<T>): Parser<T> {
+  return first(parser, eof());
+}
+
 export default {
   all,
   anyChar,
@@ -403,6 +452,9 @@ export default {
   charIs,
   charMeets,
   charOneOf,
+  complete,
+  defer,
+  eof,
   optional,
   or,
   rep0,

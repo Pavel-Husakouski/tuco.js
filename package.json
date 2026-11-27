@@ -10,7 +10,7 @@
   "scripts": {
     "build": "npm run build -w pckg.core",
     "test:core": "npm run test -w pckg.core",
-    "test:test": "npm run test -w pckg.test",
+    "test:test": "npm run build && npm run test -w pckg.test",
     "test": "npm run build && npm run --workspaces test",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

@@ -20,6 +20,7 @@ import {
   charExcept,
   charMeets,
   charOneOf,
+  defer,
   first,
   optional,
   or,
@@ -127,8 +128,8 @@ const comment = all(";", rep0(charExcept("\n")), CRLF);
 
 const cNl = or(comment, CRLF); // c-nl = comment / CRLF
 const cWsp = or(WSP, all(cNl, WSP)); // c-wsp = WSP / (c-nl WSP)
-function join(xs: string[] | null) {
-  return xs === null ? "" : xs.join("");
+function join(xs: string[]) {
+  return xs.join("");
 }
 
 // ---- 1* runs ----
@@ -140,7 +141,7 @@ const HEXDIGITS = rep1(HEXDIG).map(join); // 1*HEXDIG
 
 // rulename = ALPHA *(ALPHA / DIGIT / "-")
 const rulename = all(ALPHA, rep0(or(ALPHA, DIGIT, "-"))).map(function (v) {
-  return v[0] + (v[1] === null ? "" : v[1].join(""));
+  return v[0] + v[1].join("");
 });
 
 // char-val = DQUOTE *(%x20-21 / %x23-7E) DQUOTE
@@ -193,37 +194,25 @@ const numVal = second(
 const definedAs = between(rep0(cWsp), or("=/", "="), rep0(cWsp));
 
 // ---- mutually recursive rules (forward declarations) ----
-let alternationImpl: any = null;
-const alternation = function (x: string | null) {
-  return alternationImpl(x);
-};
-let concatenationImpl: any = null;
-const concatenation = function (x: string | null) {
-  return concatenationImpl(x);
-};
-let repetitionImpl: any = null;
-const repetition = function (x: string | null) {
-  return repetitionImpl(x);
-};
-let elementImpl: any = null;
-const element = function (x: string | null) {
-  return elementImpl(x);
-};
-let groupImpl: any = null;
-const group = function (x: string | null) {
-  return groupImpl(x);
-};
-let optionImpl: any = null;
-const option = function (x: string | null) {
-  return optionImpl(x);
-};
+let alternationImpl: Parser<any> = null!;
+const alternation = defer(() => alternationImpl);
+let concatenationImpl: Parser<any> = null!;
+const concatenation = defer(() => concatenationImpl);
+let repetitionImpl: Parser<any> = null!;
+const repetition = defer(() => repetitionImpl);
+let elementImpl: Parser<any> = null!;
+const element = defer(() => elementImpl);
+let groupImpl: Parser<any> = null!;
+const group = defer(() => groupImpl);
+let optionImpl: Parser<any> = null!;
+const option = defer(() => optionImpl);
 
 // repeat = 1*DIGIT / (*DIGIT "*" *DIGIT)
 const repeat = or(
   all(rep0(DIGIT), "*", rep0(DIGIT)).map(function (v) {
     return {
-      min: v[0] === null ? 0 : parseInt(v[0].join(""), 10),
-      max: v[2] === null ? Infinity : parseInt(v[2].join(""), 10),
+      min: v[0].length === 0 ? 0 : parseInt(v[0].join(""), 10),
+      max: v[2].length === 0 ? Infinity : parseInt(v[2].join(""), 10),
     };
   }),
   DIGITS.map(function (s) {
@@ -270,8 +259,7 @@ repetitionImpl = all(optional(repeat), element).map(function (v) {
 // concatenation = repetition *(1*c-wsp repetition)
 concatenationImpl = all(repetition, rep0(second(rep1(cWsp), repetition))).map(
   function (v) {
-    const rest = v[1] === null ? [] : v[1];
-    return [v[0]].concat(rest);
+    return [v[0]].concat(v[1]);
   },
 );
 
@@ -280,8 +268,7 @@ alternationImpl = all(
   concatenation,
   rep0(second(between(rep0(cWsp), "/", rep0(cWsp)), concatenation)),
 ).map(function (v) {
-  const rest = v[1] === null ? [] : v[1];
-  return [v[0]].concat(rest);
+  return [v[0]].concat(v[1]);
 });
 
 // rule = rulename defined-as elements c-nl
@@ -312,14 +299,15 @@ function byName(rules: any[]) {
   return map;
 }
 
-describe("abnf (meta-demo)", function () {
-  let rules: any = null; // the parsed rulelist(source) AST, shared across the tests
+// Parse the grammar once up front, so every test works independently of the
+// execution order (a filtered or single-test run does not depend on an earlier `it`).
+const parsedRulelist = rulelist(source);
+if ("failed" in parsedRulelist) throw new Error("expected success");
+const rules = parsedRulelist.value;
 
+describe("abnf (meta-demo)", function () {
   it("parses the full ABNF self-description", function () {
-    const result = rulelist(source);
-    if ("failed" in result) throw new Error("expected success");
-    match(result.rest).with("");
-    rules = result.value;
+    match(parsedRulelist.rest).with("");
   });
 
   it("collects core and meta rules by name", function () {

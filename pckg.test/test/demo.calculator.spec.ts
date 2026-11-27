@@ -19,7 +19,9 @@ import {
   between,
   charMeets,
   charOneOf,
+  defer,
   or,
+  Parser,
   rep0,
   rep1,
 } from "@beeff/tuco";
@@ -36,34 +38,22 @@ const isIdentChar = function (c: string) {
 };
 const ident = all(charMeets(isLetter), rep0(charMeets(isIdentChar))).map(
   function (v) {
-    return v[0] + (v[1] === null ? "" : v[1].join(""));
+    return v[0] + v[1].join("");
   },
 );
 
-let exprImpl: any = null;
-const expr = function (x: string | null) {
-  return exprImpl(x);
-};
-let addImpl: any = null;
-const add = function (x: string | null) {
-  return addImpl(x);
-};
-let mulImpl: any = null;
-const mul = function (x: string | null) {
-  return mulImpl(x);
-};
-let unaryImpl: any = null;
-const unary = function (x: string | null) {
-  return unaryImpl(x);
-};
-let powerImpl: any = null;
-const power = function (x: string | null) {
-  return powerImpl(x);
-};
-let atomImpl: any = null;
-const atom = function (x: string | null) {
-  return atomImpl(x);
-};
+let exprImpl: Parser<any> = null!;
+const expr = defer(() => exprImpl);
+let addImpl: Parser<any> = null!;
+const add = defer(() => addImpl);
+let mulImpl: Parser<any> = null!;
+const mul = defer(() => mulImpl);
+let unaryImpl: Parser<any> = null!;
+const unary = defer(() => unaryImpl);
+let powerImpl: Parser<any> = null!;
+const power = defer(() => powerImpl);
+let atomImpl: Parser<any> = null!;
+const atom = defer(() => atomImpl);
 
 // atom = number | variable | '(' expr ')'
 atomImpl = or(number, ident, between("(", expr, ")"));
@@ -71,13 +61,13 @@ atomImpl = or(number, ident, between("(", expr, ")"));
 // fold a flat chain [head, [[op, operand], ...]] into [op, a, b] (operator first).
 const foldl = function (v: any) {
   let acc = v[0];
-  const pairs = v[1] == null ? [] : v[1];
+  const pairs = v[1];
   for (let i = 0; i < pairs.length; i++) acc = [pairs[i][0], acc, pairs[i][1]];
   return acc;
 };
 
 const foldr = function (v: any) {
-  const pairs = v[1] == null ? [] : v[1];
+  const pairs = v[1];
   if (pairs.length === 0) return v[0];
   let acc = pairs[pairs.length - 1][1];
   for (let i = pairs.length - 1; i >= 0; i--)
@@ -101,7 +91,9 @@ exprImpl = add;
 
 describe("calculator", function () {
   function parse(s: string) {
-    return expr(s);
+    const result = expr(s);
+    if ("failed" in result) throw new Error("expected success");
+    return result;
   }
 
   it("chains subtraction left-associatively", function () {

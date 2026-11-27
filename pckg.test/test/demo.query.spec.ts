@@ -19,9 +19,12 @@ import {
   between,
   charExcept,
   charOneOf,
+  complete,
+  defer,
   first,
   optional,
   or,
+  Parser,
   rep0,
   rep1,
   second,
@@ -30,7 +33,7 @@ import {
 const opt = optional;
 
 function toString(x: any) {
-  if (x === null || typeof x === "string") return x;
+  if (typeof x === "string") return x;
   return x.join("");
 }
 
@@ -69,21 +72,13 @@ function toLeftArg(v: any) {
 const spaceConst = " \u00A0,;\n\r\t";
 const specialConst = '"()';
 
-let shapedLogicImpl: any = null;
-let logicImpl: any = null;
-let queryImpl: any = null;
+let shapedLogicImpl: Parser<any> = null!;
+let logicImpl: Parser<any> = null!;
+let queryImpl: Parser<any> = null!;
 
-function shapedLogic(x: string | null) {
-  return shapedLogicImpl(x);
-}
-
-function logic(x: string | null) {
-  return logicImpl(x);
-}
-
-function query(x: string | null) {
-  return queryImpl(x);
-}
+const shapedLogic = defer(() => shapedLogicImpl);
+const logic = defer(() => logicImpl);
+const query = defer(() => queryImpl);
 
 const special = rep1(charOneOf(specialConst)).map(toString);
 const space = rep1(charOneOf(spaceConst));
@@ -112,21 +107,7 @@ shapedLogicImpl = all(shaped, opt(logicRest)).map(toLeftArg);
 logicImpl = all(singleWord, opt(logicRest)).map(toLeftArg);
 queryImpl = between(opt(space), opt(or(shapedLogic, logic)), opt(space));
 
-function parseQuery(text: string) {
-  const result = query(text);
-
-  if (result.failed) return result;
-
-  if (result.rest === "") return result;
-
-  // Leftover input: the grammar consumed a prefix and stopped.  Report the
-  // first unconsumed character's position as the error site.
-  return {
-    failed: true,
-    pos: text.length - result.rest.length,
-    expected: ["end of input"],
-  };
-}
+const parseQuery = complete(query);
 
 function buildClauses(result: any): any[] {
   if (result === null) return [];
@@ -139,11 +120,19 @@ function buildClauses(result: any): any[] {
   throw new Error("wrong kind");
 }
 
+function queryValue(text: string): any {
+  const result = query(text);
+  if ("failed" in result) throw new Error("expected success");
+  return result.value;
+}
+
 describe("query", function () {
   it("big", function () {
     const result = query(
       'bamboo OR (join AND ")quted test laenin,()!" bbq) AND "" OR ncx AND pgt',
     );
+
+    if ("failed" in result) throw new Error("expected success");
 
     match(result.rest).with("");
   });
@@ -271,7 +260,7 @@ describe("query", function () {
     match(result).with({
       value: {
         kind: "verbatim",
-        value: null,
+        value: "",
       },
       rest: "",
     });
@@ -311,26 +300,26 @@ describe("query errors", function () {
 
 describe("build clauses", function () {
   it("single word", function () {
-    const result = buildClauses(query("test").value);
+    const result = buildClauses(queryValue("test"));
 
     match(result).with(["test"]);
   });
 
   it("several word", function () {
-    const result = buildClauses(query("test1 test2 test3").value);
+    const result = buildClauses(queryValue("test1 test2 test3"));
 
     match(result.sort()).with(["test1", "test2", "test3"]);
   });
 
   it("several word and parenthesises", function () {
-    const result = buildClauses(query("test1 (test2 test3)").value);
+    const result = buildClauses(queryValue("test1 (test2 test3)"));
 
     match(result.sort()).with(["test1", "test2", "test3"]);
   });
 
   it("several word and parenthesises and verbatim", function () {
     const result = buildClauses(
-      query('test1 (test2 test3 AND "quoted string")').value,
+      queryValue('test1 (test2 test3 AND "quoted string")'),
     );
 
     match(result.sort()).with(["quoted string", "test1", "test2", "test3"]);

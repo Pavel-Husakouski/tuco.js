@@ -116,11 +116,11 @@ describe("repetition", function () {
     match(result).with({ value: ["x", "x", "x", "x"], rest: "zzzz" });
   });
 
-  it("rep0 can't be null", function () {
+  it("rep0 empty when no match", function () {
     const parser = rep0(charIs("x"));
     const result = parser("zzz");
 
-    match(result).with({ value: null, rest: "zzz" });
+    match(result).with({ value: [], rest: "zzz" });
   });
 
   it("rep0 single not null", function () {
@@ -150,22 +150,22 @@ describe("repetition", function () {
     });
   });
 
-  it("rep0 implicit `all` value null when no match", function () {
+  it("rep0 implicit `all` value empty when no match", function () {
     const parser = rep0(word("text1"), word("text2"));
     const result = parser("text1text and etc.");
 
     match(result).with({
-      value: null,
+      value: [],
       rest: "text1text and etc.",
     });
   });
 
-  it("rep0 implicit `word` value null when no match", function () {
+  it("rep0 implicit `word` value empty when no match", function () {
     const parser = rep0("text1", "text2");
     const result = parser("text1text and etc.");
 
     match(result).with({
-      value: null,
+      value: [],
       rest: "text1text and etc.",
     });
   });
@@ -194,6 +194,22 @@ describe("repetition", function () {
       ],
       rest: "text1 and etc.",
     });
+  });
+
+  it("rep1(anyChar()) parses long input without recursion", function () {
+    const parser = rep1(anyChar());
+    const result = parser("x".repeat(20000));
+
+    match(result).with({ rest: "" });
+  });
+
+  it("rep1(optional(...)) throws on empty match", function () {
+    const parser = rep1(optional("x"));
+    const error = thrown(function () {
+      parser("y");
+    });
+
+    match(error).with(instanceOf(Error, { message: re(/empty input/) }));
   });
 });
 
@@ -478,6 +494,50 @@ describe("anyChar", function () {
   });
 });
 
+describe("null input", function () {
+  it("optional succeeds with a null value", function () {
+    const parser = optional("a");
+    const result = parser(null);
+
+    match(result).with({ value: null, rest: "" });
+  });
+
+  it("rep0 succeeds with an empty array", function () {
+    const parser = rep0("a");
+    const result = parser(null);
+
+    match(result).with({ value: [], rest: "" });
+  });
+
+  it("word fails at position 0", function () {
+    const parser = word("a");
+    const result = parser(null);
+
+    match(result).with({ failed: true, pos: 0 });
+  });
+
+  it("charIs fails with the expected character", function () {
+    const parser = charIs("a");
+    const result = parser(null);
+
+    match(result).with({ failed: true, pos: 0, expected: ['"a"'] });
+  });
+
+  it("all fails cleanly", function () {
+    const parser = all(charIs("a"), charIs("b"));
+    const result = parser(null);
+
+    match(result).with({ failed: true, pos: 0 });
+  });
+
+  it("or fails cleanly", function () {
+    const parser = or(word("a"), word("b"));
+    const result = parser(null);
+
+    match(result).with({ failed: true, pos: 0 });
+  });
+});
+
 describe("errors", function () {
   it("carries the position and expected", function () {
     const parser = word("abc");
@@ -498,6 +558,20 @@ describe("errors", function () {
     const result = parser("ax");
 
     match(result).with({ failed: true, pos: 1, expected: ['"b"'] });
+  });
+
+  it("charIs reports the expected character at end of input", function () {
+    const parser = charIs(")");
+    const result = parser("");
+
+    match(result).with({ failed: true, pos: 0, expected: ['")"'] });
+  });
+
+  it("word reports the missing character at end of input", function () {
+    const parser = word("abc");
+    const result = parser("ab");
+
+    match(result).with({ failed: true, pos: 2, expected: ['"c"'] });
   });
 });
 
@@ -532,5 +606,93 @@ describe("argument validation", function () {
         optional();
       }),
     ).with(instanceOf(Error, { message: re(/at least one combinator/) }));
+  });
+
+  it("all rejects no combinators", function () {
+    match(
+      thrown(function () {
+        all();
+      }),
+    ).with(instanceOf(Error, { message: re(/at least two combinators/) }));
+  });
+
+  it("all rejects a single combinator", function () {
+    match(
+      thrown(function () {
+        all(anyChar());
+      }),
+    ).with(instanceOf(Error, { message: re(/at least two combinators/) }));
+  });
+
+  it("or rejects a single combinator", function () {
+    match(
+      thrown(function () {
+        or(anyChar());
+      }),
+    ).with(instanceOf(Error, { message: re(/at least two combinators/) }));
+  });
+
+  it("first rejects a single combinator", function () {
+    match(
+      thrown(function () {
+        (first as any)(anyChar());
+      }),
+    ).with(instanceOf(Error, { message: re(/two combinators/) }));
+  });
+
+  it("second rejects a single combinator", function () {
+    match(
+      thrown(function () {
+        (second as any)(anyChar());
+      }),
+    ).with(instanceOf(Error, { message: re(/two combinators/) }));
+  });
+
+  it("between rejects two combinators", function () {
+    match(
+      thrown(function () {
+        (between as any)(anyChar(), anyChar());
+      }),
+    ).with(instanceOf(Error, { message: re(/three combinators/) }));
+  });
+
+  it("charExcept rejects a non-string", function () {
+    match(
+      thrown(function () {
+        (charExcept as any)(1);
+      }),
+    ).with(instanceOf(Error, { message: re(/accepts string/) }));
+  });
+
+  it("charOneOf rejects null", function () {
+    match(
+      thrown(function () {
+        (charOneOf as any)(null);
+      }),
+    ).with(instanceOf(Error, { message: re(/accepts string/) }));
+  });
+
+  it("charIs rejects a multi-character string", function () {
+    match(
+      thrown(function () {
+        charIs("ab");
+      }),
+    ).with(instanceOf(Error, { message: re(/single character/) }));
+  });
+
+  it("charMeets rejects a non-function predicate", function () {
+    match(
+      thrown(function () {
+        (charMeets as any)("not a fn");
+      }),
+    ).with(instanceOf(Error, { message: re(/accepts predicate/) }));
+  });
+
+  it("map rejects a non-function projection", function () {
+    match(
+      thrown(function () {
+        (anyChar() as any).map("not a fn");
+      }),
+    ).with(instanceOf(Error, { message: re(/projection function/) }));
   });
 });
