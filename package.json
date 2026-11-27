@@ -1,6 +1,6 @@
 {
   "name": "tuco workspace",
-  "version": "1.0.0",
+  "version": "1.0.0-rc3",
   "private": true,
   "description": "Workspace for tuco library and its test packages",
   "workspaces": [
@@ -11,11 +11,16 @@
     "build": "npm run build -w pckg.core",
     "test:core": "npm run test -w pckg.core",
     "test:test": "npm run test -w pckg.test",
-    "test": "npm run build && npm run --workspaces test"
+    "test": "npm run build && npm run --workspaces test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "author": "Pauel <phusakouski@gmail.com>",
   "license": "MIT",
   "repository": {
     "url": "https://github.com/Pavel-Husakouski/tuco.js"
+  },
+  "devDependencies": {
+    "prettier": "^3.10.1"
   }
 }

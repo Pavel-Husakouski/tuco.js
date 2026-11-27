@@ -1,4 +1,4 @@
-import * as mocha from 'mocha';
+import * as mocha from "mocha";
 
-mocha.reporters.Base.symbols.ok = 'ok';
-mocha.reporters.Base.symbols.err = 'fail';
+mocha.reporters.Base.symbols.ok = "ok";
+mocha.reporters.Base.symbols.err = "fail";

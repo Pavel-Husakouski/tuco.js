@@ -13,70 +13,84 @@ specials        > special , {special} ;
 space 			> singleSpace , {singleSpace} ;
 */
 
-import { match } from '@beeff/loose-match';
+import { match } from "@beeff/loose-match";
 import {
-    all, between, charExcept, charOneOf, first, optional, or, rep0, rep1, second
-} from '@beeff/tuco';
+  all,
+  between,
+  charExcept,
+  charOneOf,
+  first,
+  optional,
+  or,
+  rep0,
+  rep1,
+  second,
+} from "@beeff/tuco";
 
 const opt = optional;
 
-function toString(x: any){
-	if(x === null || typeof x === 'string')
-		return x;
-	return x.join(''); 
+function toString(x: any) {
+  if (x === null || typeof x === "string") return x;
+  return x.join("");
 }
 
-function toWord(v: any){
-	return {kind:'word', value:toString(v)};
+function toWord(v: any) {
+  return { kind: "word", value: toString(v) };
 }
 
 function toVerbatim(v: any) {
-	return {kind:'verbatim', value:toString(v)};
+  return { kind: "verbatim", value: toString(v) };
 }
 
 function toOperator(v: any) {
-	return {kind:v === null ? 'AND' : v};
+  return { kind: v === null ? "AND" : v };
 }
 
-function toRightArg (v: any){
-	if(v === null)
-		return v;
+function toRightArg(v: any) {
+  if (v === null) return v;
 
-	const op = v[0];
+  const op = v[0];
 
-	op.right = v[1];
+  op.right = v[1];
 
-	return op; 
+  return op;
 }
 
-function toLeftArg (v: any){
-	if(v[1] === null)
-		return v[0];
+function toLeftArg(v: any) {
+  if (v[1] === null) return v[0];
 
-	const op = v[1];
+  const op = v[1];
 
-	op.left =  v[0];
+  op.left = v[0];
 
-	return op;
+  return op;
 }
 
-const spaceConst = ' \u00A0,;\n\r\t';
+const spaceConst = " \u00A0,;\n\r\t";
 const specialConst = '"()';
 
 let shapedLogicImpl: any = null;
 let logicImpl: any = null;
 let queryImpl: any = null;
 
-function shapedLogic(x: string | null) { return shapedLogicImpl(x); };
-function logic(x: string | null) { return logicImpl(x); };
-function query(x: string | null) { return queryImpl(x); };
+function shapedLogic(x: string | null) {
+  return shapedLogicImpl(x);
+}
 
-const special 	= rep1(charOneOf(specialConst)).map(toString);
-const space   	= rep1(charOneOf(spaceConst));
-const nonSpecial 	= rep1(charExcept(spaceConst + specialConst)).map(toString);
-const singleWord 	= all(nonSpecial, rep0( special, nonSpecial)).map(toWord);
-const verbatim 	= between('"', rep0(charExcept('"')), '"').map(toVerbatim);
-const shaped 		= or(between('(', query, ')'), verbatim);
+function logic(x: string | null) {
+  return logicImpl(x);
+}
+
+function query(x: string | null) {
+  return queryImpl(x);
+}
+
+const special = rep1(charOneOf(specialConst)).map(toString);
+const space = rep1(charOneOf(spaceConst));
+const nonSpecial = rep1(charExcept(spaceConst + specialConst)).map(toString);
+const singleWord = all(nonSpecial, rep0(special, nonSpecial)).map(toWord);
+const verbatim = between('"', rep0(charExcept('"')), '"').map(toVerbatim);
+const shaped = or(between("(", query, ")"), verbatim);
 // Operator precedence rests on the op0/op1 pair and the order of the
 // alternatives in logicRest (below). After the left operand and a separating
 // space, the right operand is recognized via one of two paths:
@@ -88,237 +102,243 @@ const shaped 		= or(between('(', query, ')'), verbatim);
 // so 'AND(' and 'AND"..."' read as operator + shaped (no space needed), while
 // 'AND word' needs the space — otherwise 'ANDfoo' stays one word. The order of
 // the alternatives or(op0 + shapedLogic, op1 + logic) encodes that precedence.
-const op0 		= opt(first(or('AND', 'OR'), opt(space))).map(toOperator); 
-const op1 		= opt(first(or('AND', 'OR'), space)).map(toOperator); 
-const logicRest 	= second(space, opt(or( all(op0, shapedLogic), all(op1, logic) ))).map(toRightArg);
+const op0 = opt(first(or("AND", "OR"), opt(space))).map(toOperator);
+const op1 = opt(first(or("AND", "OR"), space)).map(toOperator);
+const logicRest = second(
+  space,
+  opt(or(all(op0, shapedLogic), all(op1, logic))),
+).map(toRightArg);
 shapedLogicImpl = all(shaped, opt(logicRest)).map(toLeftArg);
-logicImpl   = all(singleWord, opt(logicRest)).map(toLeftArg);
-queryImpl 	= between(opt(space), opt(or(shapedLogic, logic)), opt(space));
+logicImpl = all(singleWord, opt(logicRest)).map(toLeftArg);
+queryImpl = between(opt(space), opt(or(shapedLogic, logic)), opt(space));
 
-function parseQuery(text: string){
-	const result = query(text);
+function parseQuery(text: string) {
+  const result = query(text);
 
-	if(result.failed)
-		return result;
+  if (result.failed) return result;
 
-	if(result.rest === '')
-		return result;
+  if (result.rest === "") return result;
 
-	// Leftover input: the grammar consumed a prefix and stopped.  Report the
-	// first unconsumed character's position as the error site.
-	return { failed:true, pos: text.length - result.rest.length, expected:['end of input'] };
+  // Leftover input: the grammar consumed a prefix and stopped.  Report the
+  // first unconsumed character's position as the error site.
+  return {
+    failed: true,
+    pos: text.length - result.rest.length,
+    expected: ["end of input"],
+  };
 }
 
-function buildClauses(result: any): any[]{
-	if(result === null)
-		return [];
+function buildClauses(result: any): any[] {
+  if (result === null) return [];
 
-	if(result.kind in {"word":0, "verbatim":0} )
-		return [result.value];
+  if (result.kind in { word: 0, verbatim: 0 }) return [result.value];
 
-	if(result.kind in {"OR":0, "AND":0})
-		return buildClauses(result.left).concat(buildClauses(result.right));
+  if (result.kind in { OR: 0, AND: 0 })
+    return buildClauses(result.left).concat(buildClauses(result.right));
 
-	throw new Error('wrong kind');
+  throw new Error("wrong kind");
 }
 
-describe('query', function() {
-   	it("big", function(){
-		const result = query('bamboo OR (join AND ")quted test laenin,()!" bbq) AND "" OR ncx AND pgt');
-		
-		match(result.rest).with('');
-   	});
+describe("query", function () {
+  it("big", function () {
+    const result = query(
+      'bamboo OR (join AND ")quted test laenin,()!" bbq) AND "" OR ncx AND pgt',
+    );
 
+    match(result.rest).with("");
+  });
 
-   	it("simple", function(){
-		const result = query('x');
-		
-		match(result).with({
-			value: { 
-				kind:'word',
-				value:'x'
-			},
-			rest:""
-		});
-   	});
+  it("simple", function () {
+    const result = query("x");
 
-   	it("simple with spaces", function(){
-		const result = query(' x ');
-		
-		match(result).with({
-			value: { 
-				kind:'word',
-				value:'x'
-			},
-			rest:""
-		});
-   	});
+    match(result).with({
+      value: {
+        kind: "word",
+        value: "x",
+      },
+      rest: "",
+    });
+  });
 
-   	it("simple quoted", function(){
-		const result = query('" x "');
-		
-		match(result).with({
-			value: { 
-				kind:'verbatim',
-				value:' x '
-			},
-			rest:""
-		});
-   	});
+  it("simple with spaces", function () {
+    const result = query(" x ");
 
-   	it("simple parenthesed", function(){
-		const result = query(' ( x ) ');
-		
-		match(result).with({
-			value: { 
-				kind:'word',
-				value:'x'
-			},
-			rest:""
-		});
-   	});
+    match(result).with({
+      value: {
+        kind: "word",
+        value: "x",
+      },
+      rest: "",
+    });
+  });
 
-   	it("simple parenthesed no spaces", function(){
-		const result = query('(x)');
-		
-		match(result).with({
-			value: { 
-				kind:'word',
-				value:'x'
-			},
-			rest:""
-		});
-   	});
+  it("simple quoted", function () {
+    const result = query('" x "');
 
-   	it("operator AND", function(){
-		const result = query('x AND y');
-		
-		match(result).with({
-			value: { 
-				kind:'AND',
-				left:{
-					kind:'word',
-					value: 'x'
-				},
-				right:{
-					kind:'word',
-					value: 'y'
-				},
-			},
-			rest:""
-		});
-   	});
+    match(result).with({
+      value: {
+        kind: "verbatim",
+        value: " x ",
+      },
+      rest: "",
+    });
+  });
 
-   	it("operator OR", function(){
-		const result = query('x OR y');
-		
-		match(result).with({
-			value: { 
-				kind:'OR',
-				left:{
-					kind:'word',
-					value: 'x'
-				},
-				right:{
-					kind:'word',
-					value: 'y'
-				},
-			},
-			rest:""
-		});
-   	});
+  it("simple parenthesed", function () {
+    const result = query(" ( x ) ");
 
-   	it("implicit operator AND", function(){
-		const result = query('x  y');
-		
-		match(result).with({
-			value: { 
-				kind:'AND',
-				left:{
-					kind:'word',
-					value: 'x'
-				},
-				right:{
-					kind:'word',
-					value: 'y'
-				},
-			},
-			rest:""
-		});
-   	});
+    match(result).with({
+      value: {
+        kind: "word",
+        value: "x",
+      },
+      rest: "",
+    });
+  });
 
-   	it("empty verbatim", function(){
-		const result = query('""');
-		
-		match(result).with({
-			value: { 
-				kind:'verbatim',
-				value:null
-			},
-			rest:""
-		});
-   	});
+  it("simple parenthesed no spaces", function () {
+    const result = query("(x)");
 
-   	it("empty parenthesises", function(){
-		const result = query('()');
-		
-		match(result).with({
-			value: null,
-			rest:""
-		});
-   	});
+    match(result).with({
+      value: {
+        kind: "word",
+        value: "x",
+      },
+      rest: "",
+    });
+  });
+
+  it("operator AND", function () {
+    const result = query("x AND y");
+
+    match(result).with({
+      value: {
+        kind: "AND",
+        left: {
+          kind: "word",
+          value: "x",
+        },
+        right: {
+          kind: "word",
+          value: "y",
+        },
+      },
+      rest: "",
+    });
+  });
+
+  it("operator OR", function () {
+    const result = query("x OR y");
+
+    match(result).with({
+      value: {
+        kind: "OR",
+        left: {
+          kind: "word",
+          value: "x",
+        },
+        right: {
+          kind: "word",
+          value: "y",
+        },
+      },
+      rest: "",
+    });
+  });
+
+  it("implicit operator AND", function () {
+    const result = query("x  y");
+
+    match(result).with({
+      value: {
+        kind: "AND",
+        left: {
+          kind: "word",
+          value: "x",
+        },
+        right: {
+          kind: "word",
+          value: "y",
+        },
+      },
+      rest: "",
+    });
+  });
+
+  it("empty verbatim", function () {
+    const result = query('""');
+
+    match(result).with({
+      value: {
+        kind: "verbatim",
+        value: null,
+      },
+      rest: "",
+    });
+  });
+
+  it("empty parenthesises", function () {
+    const result = query("()");
+
+    match(result).with({
+      value: null,
+      rest: "",
+    });
+  });
 });
 
-describe('query errors', function(){
-	it('dangling quote', function() {
-		const result = parseQuery('"test');
+describe("query errors", function () {
+  it("dangling quote", function () {
+    const result = parseQuery('"test');
 
-		match(result).with( {
-			failed:true,
-			pos:0,
-			expected:['end of input']
-		});
-	});
+    match(result).with({
+      failed: true,
+      pos: 0,
+      expected: ["end of input"],
+    });
+  });
 
-	it('dangling parenthesis', function() {
-		const result = parseQuery('test (');
+  it("dangling parenthesis", function () {
+    const result = parseQuery("test (");
 
-		match(result).with( {
-			failed:true,
-			pos:5,
-			expected:['end of input']
-		});
-	});
+    match(result).with({
+      failed: true,
+      pos: 5,
+      expected: ["end of input"],
+    });
+  });
 });
 
-describe('build clauses', function(){
-	it('single word', function(){
-		const result = buildClauses(query('test').value);
+describe("build clauses", function () {
+  it("single word", function () {
+    const result = buildClauses(query("test").value);
 
-		match(result).with( ['test']);
-	});
+    match(result).with(["test"]);
+  });
 
-	it('several word', function(){
-		const result = buildClauses(query('test1 test2 test3').value);
+  it("several word", function () {
+    const result = buildClauses(query("test1 test2 test3").value);
 
-		match(result.sort()).with( ['test1', 'test2', 'test3']);
-	});
+    match(result.sort()).with(["test1", "test2", "test3"]);
+  });
 
-	it('several word and parenthesises', function(){
-		const result = buildClauses(query('test1 (test2 test3)').value);
+  it("several word and parenthesises", function () {
+    const result = buildClauses(query("test1 (test2 test3)").value);
 
-		match(result.sort()).with( ['test1', 'test2', 'test3']);
-	});
+    match(result.sort()).with(["test1", "test2", "test3"]);
+  });
 
-	it('several word and parenthesises and verbatim', function(){
-		const result = buildClauses(query('test1 (test2 test3 AND "quoted string")').value);
+  it("several word and parenthesises and verbatim", function () {
+    const result = buildClauses(
+      query('test1 (test2 test3 AND "quoted string")').value,
+    );
 
-		match(result.sort()).with( ['quoted string', 'test1', 'test2', 'test3']);
-	});
+    match(result.sort()).with(["quoted string", "test1", "test2", "test3"]);
+  });
 
-	it('null result gives no clauses', function(){
-		const result = buildClauses(null);
+  it("null result gives no clauses", function () {
+    const result = buildClauses(null);
 
-		match(result).with( []);
-	});
+    match(result).with([]);
+  });
 });

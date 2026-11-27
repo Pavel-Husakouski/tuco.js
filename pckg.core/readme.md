@@ -11,10 +11,10 @@ Usage
 -----
 
 ```ts
-import { or, word } from '@beeff/tuco';
+import { or, word } from "@beeff/tuco";
 
-const parser = or(word('first'), word('second'));
-parser('firstsecond');   // { value: 'first', rest: 'second' }
+const parser = or(word("first"), word("second"));
+parser("firstsecond"); // { value: 'first', rest: 'second' }
 ```
 
 Look at `pckg.test/test/demo*.spec.ts` for more details.
@@ -22,16 +22,16 @@ Look at `pckg.test/test/demo*.spec.ts` for more details.
 Development
 -----------
 
-* npm install
-* npm test            # build core + run all workspace tests (mocha + tsx)
-* npm run test:core   # core unit tests
-* npm run test:test   # demo grammar tests
-* npm run build       # compile pckg.core -> lib/ (JS + .d.ts + sourcemaps)
+- npm install
+- npm test # build core + run all workspace tests (mocha + tsx)
+- npm run test:core # core unit tests
+- npm run test:test # demo grammar tests
+- npm run build # compile pckg.core -> lib/ (JS + .d.ts + sourcemaps)
 
 Priorities
 ----------
 
-* Quality
-* Very minimum set of features
-* Easy to read, easy to understand, easy to use
-* Short, compact code
+- Quality
+- Very minimum set of features
+- Easy to read, easy to understand, easy to use
+- Short, compact code

@@ -25,14 +25,14 @@ A deliberate asymmetry: the single case yields a plain scalar rather than extra 
 Tests follow one pattern: first declare the parser, then run it and save the result, then check it with a single asymmetric matcher — exactly one `match(...).with(...)` per test.
 
 ```ts
-import { match } from '@beeff/loose-match';
-import { anyChar } from '../src';
+import { match } from "@beeff/loose-match";
+import { anyChar } from "../src";
 
-it('value and rest are not when match', function(){
-    const parser = anyChar();
-    const result = parser('123');
+it("value and rest are not when match", function () {
+  const parser = anyChar();
+  const result = parser("123");
 
-    match(result).with({ value: '1', rest: '23' });
+  match(result).with({ value: "1", rest: "23" });
 });
 ```
 
@@ -43,22 +43,26 @@ Rules:
 1. **Strict equality** — only `===` / `!==`, never `==` / `!=`.
 2. **`const` by default.** Parsers, grammars, predicates, helpers and imports are assigned once, so they are declared with `const`:
    ```ts
-   const parser = or(word('first'), word('second'));
-   const isLetter = function(c){ return /[a-zA-Z]/.test(c); };
+   const parser = or(word("first"), word("second"));
+   const isLetter = function (c) {
+     return /[a-zA-Z]/.test(c);
+   };
    ```
 3. **`let` only for reassignable values.** A variable whose value changes later (accumulators in loops, `*Impl` forward declarations) is declared with `let`; `var` is not used:
    ```ts
    let acc = v[0];
    acc = apply(op, acc, right);
 
-   let exprImpl: any = null;   // forward declaration of mutual recursion
+   let exprImpl: any = null; // forward declaration of mutual recursion
    // ...
-   exprImpl = add;             // ordinary assignment to an already-declared variable
+   exprImpl = add; // ordinary assignment to an already-declared variable
    ```
    A forward declaration of two variables on one line is split: the `Impl` holder is `let`, the wrapper is `const`:
    ```ts
    let exprImpl: any = null;
-   const expr = function(x){ return exprImpl(x); };
+   const expr = function (x) {
+     return exprImpl(x);
+   };
    ```
    The contents of an array or object may still be mutated (`push`, assignment by index) — the variable itself stays `const`.
 
@@ -69,7 +73,7 @@ The parse result is a tagged union `Result<T> = Success<T> | Fail`, so `.value`/
 A failure is compared as a whole:
 
 ```ts
-const result = word('abc')('abx');
+const result = word("abc")("abx");
 
 match(result).with({ failed: true, pos: 2, expected: ['"c"'] });
 ```
@@ -77,9 +81,9 @@ match(result).with({ failed: true, pos: 2, expected: ['"c"'] });
 A success is compared as a whole:
 
 ```ts
-const result = word('text')('text and etc.');
+const result = word("text")("text and etc.");
 
-match(result).with({ value: 'text', rest: ' and etc.' });
+match(result).with({ value: "text", rest: " and etc." });
 ```
 
 When only the fact of failure is needed:
@@ -91,8 +95,8 @@ match(result).with({ failed: true });
 When a value must be extracted from a successful result for further checks — narrow via `if`:
 
 ```ts
-const result = rulelist('x = ...');
-if ('failed' in result) throw new Error('expected success');
+const result = rulelist("x = ...");
+if ("failed" in result) throw new Error("expected success");
 // result is narrowed to Success<any> here
 ```
 

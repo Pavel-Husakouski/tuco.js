@@ -1,553 +1,536 @@
-import { instanceOf, match, re } from '@beeff/loose-match';
+import { instanceOf, match, re } from "@beeff/loose-match";
 import {
-    all, anyChar, between, charExcept, charIs, charMeets, charOneOf, first,
-    foldLeft, foldRight, optional, or, rep0, rep1, second, word
-} from '../src/index.js';
+  all,
+  anyChar,
+  between,
+  charExcept,
+  charIs,
+  charMeets,
+  charOneOf,
+  first,
+  optional,
+  or,
+  rep0,
+  rep1,
+  second,
+  word,
+} from "../src/index.js";
 
 // Returns the error thrown by fn, or null when it does not throw.
-function thrown(fn: Function){
-    try { fn(); return null; }
-    catch (e) { return e; }
+function thrown(fn: Function) {
+  try {
+    fn();
+    return null;
+  } catch (e) {
+    return e;
+  }
 }
 
-describe('map', function() {
-    it('map not null', function(){
-        const parser = all(word('first'), word('second'), word('third'))
-                    .map(function(values) {
-                        return values.join('.');
-                    });
-        const result = parser('firstsecondthirdrest');
-        
-        match(result).with( { value: 'first.second.third', rest: 'rest' });
-    });
-    
-    it('map null', function(){
-        const parser = all(word('first'), word('second'), word('third'))
-                    .map(function(values) {
-                        return values.join('.');
-                    });
-        const result = parser('zerofirstsecondthird');
-        
-        match(result).with({ failed: true });
-    })
+describe("map", function () {
+  it("map not null", function () {
+    const parser = all(word("first"), word("second"), word("third")).map(
+      function (values) {
+        return values.join(".");
+      },
+    );
+    const result = parser("firstsecondthirdrest");
+
+    match(result).with({ value: "first.second.third", rest: "rest" });
+  });
+
+  it("map null", function () {
+    const parser = all(word("first"), word("second"), word("third")).map(
+      function (values) {
+        return values.join(".");
+      },
+    );
+    const result = parser("zerofirstsecondthird");
+
+    match(result).with({ failed: true });
+  });
 });
 
-describe('alternation',function(){
-    it('or implicit `word`', function(){
-        const parser = or('first', 'second', 'third');
-        const result = parser('firstsecondthird');
-        
-        match(result).with({ value: 'first', rest: 'secondthird' });
-    });
+describe("alternation", function () {
+  it("or implicit `word`", function () {
+    const parser = or("first", "second", "third");
+    const result = parser("firstsecondthird");
 
-    it('or first not null', function(){
-        const parser = or(word('first'), word('second'), word('third'));
-        const result = parser('firstsecondthird');
-        
-        match(result).with( { value: 'first', rest: 'secondthird' });
-    });
+    match(result).with({ value: "first", rest: "secondthird" });
+  });
 
-    it('or second not null', function(){
-        const parser = or(word('first'), word('second'), word('third'));
-        const result = parser('secondfirstthird');
-        
-        match(result).with( { value: 'second', rest: 'firstthird' });
-    });
-    
-    it('or third not null', function(){
-        const parser = or(word('first'), word('second'), word('third'));
-        const result = parser('thirdfirstsecond');
-        
-        match(result).with( { value: 'third', rest: 'firstsecond' });
-    });
-    
-    it('or all null', function(){
-        const parser = or(word('first'), word('second'), word('third'));
-        const result = parser('fourththirdfirstsecond');
-        
-        match(result).with({ failed: true });
-    })
+  it("or first not null", function () {
+    const parser = or(word("first"), word("second"), word("third"));
+    const result = parser("firstsecondthird");
+
+    match(result).with({ value: "first", rest: "secondthird" });
+  });
+
+  it("or second not null", function () {
+    const parser = or(word("first"), word("second"), word("third"));
+    const result = parser("secondfirstthird");
+
+    match(result).with({ value: "second", rest: "firstthird" });
+  });
+
+  it("or third not null", function () {
+    const parser = or(word("first"), word("second"), word("third"));
+    const result = parser("thirdfirstsecond");
+
+    match(result).with({ value: "third", rest: "firstsecond" });
+  });
+
+  it("or all null", function () {
+    const parser = or(word("first"), word("second"), word("third"));
+    const result = parser("fourththirdfirstsecond");
+
+    match(result).with({ failed: true });
+  });
 });
 
-describe('repetition', function(){
-    it('rep1 not null',function(){
-        const parser = rep1(charIs('x'));
-        const result = parser('xxxxzzzz');
-        
-        match(result).with( { value: ['x', 'x', 'x', 'x'], rest: 'zzzz' });
-    });
-    
-    it('rep1 null',function(){
-        const parser = rep1(charIs('x'));
-        const result = parser('');
-        
-        match(result).with({ failed: true });
-    });
-    
-    it('rep1 single not null',function(){
-        const parser = rep1(charIs('x'));
-        const result = parser('xy');
-        
-        match(result).with( { value: ['x'], rest: 'y' });
-    });
+describe("repetition", function () {
+  it("rep1 not null", function () {
+    const parser = rep1(charIs("x"));
+    const result = parser("xxxxzzzz");
 
-    it('rep0 not null',function(){
-        const parser = rep0(charIs('x'));
-        const result = parser('xxxxzzzz');
-        
-        match(result).with( { value: ['x', 'x', 'x', 'x'], rest: 'zzzz' });
-    });
-    
-    it('rep0 can\'t be null',function(){
-        const parser = rep0(charIs('x'));
-        const result = parser('zzz');
-        
-        match(result).with( { value: null, rest: 'zzz' });
-    });
-    
-    it('rep0 single not null',function(){
-        const parser = rep1(charIs('x'));
-        const result = parser('xzzz');
-        
-        match(result).with( { value: ['x'], rest: 'zzz' });
-    });
+    match(result).with({ value: ["x", "x", "x", "x"], rest: "zzzz" });
+  });
 
-    it('rep1 implicit `all` result null when no match', function(){
-        const parser = rep1(word('text'), word('text'));
-        const result = parser('text and etc.');
-        
-        match(result).with({ failed: true });
-    });
+  it("rep1 null", function () {
+    const parser = rep1(charIs("x"));
+    const result = parser("");
 
-    it('rep1 implicit `all` value not null when match', function(){
-        const parser = rep1(word('text1'), word('text2'));
-        const result = parser('text1text2text1text2text1 and etc.');
-        
-        match(result).with( {
-            value:[["text1","text2"],["text1","text2"]],
-            rest:"text1 and etc."
-        });
-    });
+    match(result).with({ failed: true });
+  });
 
-    it('rep0 implicit `all` value null when no match', function(){
-        const parser = rep0(word('text1'), word('text2'));
-        const result = parser('text1text and etc.');
-        
-        match(result).with( {
-            value:null,
-            rest:"text1text and etc."
-        });
-    });
+  it("rep1 single not null", function () {
+    const parser = rep1(charIs("x"));
+    const result = parser("xy");
 
-    it('rep0 implicit `word` value null when no match', function(){
-        const parser = rep0('text1', 'text2');
-        const result = parser('text1text and etc.');
-        
-        match(result).with( {
-            value:null,
-            rest:"text1text and etc."
-        });
-    });
+    match(result).with({ value: ["x"], rest: "y" });
+  });
 
-    it('rep0 implicit `all` value not null when match', function(){
-        const parser = rep0(word('text1'), word('text2'));
-        const result = parser('text1text2text1text2text1 and etc.');
-        
-        match(result).with( {
-            value:[["text1","text2"],["text1","text2"]],
-            rest:"text1 and etc."
-        });
-    });
+  it("rep0 not null", function () {
+    const parser = rep0(charIs("x"));
+    const result = parser("xxxxzzzz");
 
-    it('rep0 implicit `word`', function(){
-        const parser = rep0('text1', 'text2');
-        const result = parser('text1text2text1text2text1 and etc.');
-        
-        match(result).with( {
-            value:[["text1","text2"],["text1","text2"]],
-            rest:"text1 and etc."
-        });
+    match(result).with({ value: ["x", "x", "x", "x"], rest: "zzzz" });
+  });
+
+  it("rep0 can't be null", function () {
+    const parser = rep0(charIs("x"));
+    const result = parser("zzz");
+
+    match(result).with({ value: null, rest: "zzz" });
+  });
+
+  it("rep0 single not null", function () {
+    const parser = rep1(charIs("x"));
+    const result = parser("xzzz");
+
+    match(result).with({ value: ["x"], rest: "zzz" });
+  });
+
+  it("rep1 implicit `all` result null when no match", function () {
+    const parser = rep1(word("text"), word("text"));
+    const result = parser("text and etc.");
+
+    match(result).with({ failed: true });
+  });
+
+  it("rep1 implicit `all` value not null when match", function () {
+    const parser = rep1(word("text1"), word("text2"));
+    const result = parser("text1text2text1text2text1 and etc.");
+
+    match(result).with({
+      value: [
+        ["text1", "text2"],
+        ["text1", "text2"],
+      ],
+      rest: "text1 and etc.",
     });
+  });
+
+  it("rep0 implicit `all` value null when no match", function () {
+    const parser = rep0(word("text1"), word("text2"));
+    const result = parser("text1text and etc.");
+
+    match(result).with({
+      value: null,
+      rest: "text1text and etc.",
+    });
+  });
+
+  it("rep0 implicit `word` value null when no match", function () {
+    const parser = rep0("text1", "text2");
+    const result = parser("text1text and etc.");
+
+    match(result).with({
+      value: null,
+      rest: "text1text and etc.",
+    });
+  });
+
+  it("rep0 implicit `all` value not null when match", function () {
+    const parser = rep0(word("text1"), word("text2"));
+    const result = parser("text1text2text1text2text1 and etc.");
+
+    match(result).with({
+      value: [
+        ["text1", "text2"],
+        ["text1", "text2"],
+      ],
+      rest: "text1 and etc.",
+    });
+  });
+
+  it("rep0 implicit `word`", function () {
+    const parser = rep0("text1", "text2");
+    const result = parser("text1text2text1text2text1 and etc.");
+
+    match(result).with({
+      value: [
+        ["text1", "text2"],
+        ["text1", "text2"],
+      ],
+      rest: "text1 and etc.",
+    });
+  });
 });
 
+describe("option", function () {
+  it("optional implicit `word`", function () {
+    const parser = optional("text");
+    const result = parser("text and etc.");
 
-describe ('option',function(){
-    it('optional implicit `word`', function(){
-        const parser = optional('text');
-        const result = parser('text and etc.');
-        
-        match(result).with({
-            value:'text',
-            rest:' and etc.'
-        });
+    match(result).with({
+      value: "text",
+      rest: " and etc.",
     });
+  });
 
-    it('optional not null', function(){
-        const parser = optional(word('text'));
-        const result = parser('text and etc.');
-        
-        match(result).with( { value: 'text', rest: ' and etc.' });
-    });
-    
-    it('optional can\'t be null', function(){
-        const parser = optional(word('text'));
-        const result = parser('xxx text and etc.');
-        
-        match(result).with( { value: null, rest: 'xxx text and etc.' });
-    })
+  it("optional not null", function () {
+    const parser = optional(word("text"));
+    const result = parser("text and etc.");
 
-    it('implicit `all` value null when no match', function(){
-        const parser = optional(word('text'), word('text'));
-        const result = parser('text and etc.');
-        
-        match(result).with( { value: null, rest: 'text and etc.' });
-    });
+    match(result).with({ value: "text", rest: " and etc." });
+  });
 
-    it('implicit `all` value not null when match', function(){
-        const parser = optional(word('text'), word('text'));
-        const result = parser('texttext and etc.');
-        
-        match(result).with( { value: ['text', 'text'], rest: ' and etc.' });
-    });
+  it("optional can't be null", function () {
+    const parser = optional(word("text"));
+    const result = parser("xxx text and etc.");
+
+    match(result).with({ value: null, rest: "xxx text and etc." });
+  });
+
+  it("implicit `all` value null when no match", function () {
+    const parser = optional(word("text"), word("text"));
+    const result = parser("text and etc.");
+
+    match(result).with({ value: null, rest: "text and etc." });
+  });
+
+  it("implicit `all` value not null when match", function () {
+    const parser = optional(word("text"), word("text"));
+    const result = parser("texttext and etc.");
+
+    match(result).with({ value: ["text", "text"], rest: " and etc." });
+  });
 });
 
-describe('charXXX', function(){
-    it('charExcept not null',function(){
-        const parser = charExcept("");
-        const result = parser('x123');
-    
-        match(result).with( { value: 'x', rest: '123' });
-    }) ;
-    
-    it('charExcept null',function(){
-        const parser = charExcept("x");
-        const result = parser('x123');
-    
-        match(result).with({ failed: true });
-    });
-    
-    it('charOneOF not null',function(){
-        const parser = charOneOf("xyz");
-        const result = parser('x123');
-    
-        match(result).with( { value: 'x', rest: '123' });
-    });
+describe("charXXX", function () {
+  it("charExcept not null", function () {
+    const parser = charExcept("");
+    const result = parser("x123");
 
-   it('charOneOF null',function(){
-        const parser = charOneOf("xyz");
-        const result = parser('123');
-    
-        match(result).with({ failed: true });
-    });
+    match(result).with({ value: "x", rest: "123" });
+  });
 
-    it('charMeets not null',function(){
-        const parser = charMeets(function(ch) { return ch === 'x'; });
-        const result = parser('xyz');
-    
-        match(result).with( { value: 'x', rest: 'yz' });
-    });
+  it("charExcept null", function () {
+    const parser = charExcept("x");
+    const result = parser("x123");
 
-    it('charMeets null',function(){
-        const parser = charMeets(function(ch) { return false; });
-        const result = parser('xyz');
-    
-        match(result).with({ failed: true });
+    match(result).with({ failed: true });
+  });
+
+  it("charOneOF not null", function () {
+    const parser = charOneOf("xyz");
+    const result = parser("x123");
+
+    match(result).with({ value: "x", rest: "123" });
+  });
+
+  it("charOneOF null", function () {
+    const parser = charOneOf("xyz");
+    const result = parser("123");
+
+    match(result).with({ failed: true });
+  });
+
+  it("charMeets not null", function () {
+    const parser = charMeets(function (ch) {
+      return ch === "x";
     });
-    
-    it('charIs("x") not null',function(){
-        const parser = charIs('x');
-        const result = parser('xyz');
-    
-        match(result).with( { value: 'x', rest: 'yz' });
+    const result = parser("xyz");
+
+    match(result).with({ value: "x", rest: "yz" });
+  });
+
+  it("charMeets null", function () {
+    const parser = charMeets(function (ch) {
+      return false;
     });
-    
-    it('charIs("x") null',function(){
-        const parser = charIs('x');
-        const result = parser('1yz');
-    
-        match(result).with({ failed: true });
-    })
+    const result = parser("xyz");
+
+    match(result).with({ failed: true });
+  });
+
+  it('charIs("x") not null', function () {
+    const parser = charIs("x");
+    const result = parser("xyz");
+
+    match(result).with({ value: "x", rest: "yz" });
+  });
+
+  it('charIs("x") null', function () {
+    const parser = charIs("x");
+    const result = parser("1yz");
+
+    match(result).with({ failed: true });
+  });
 });
 
-describe('all', function(){
-    it('implicit `word`',function(){
-        const parser = all('x','yy','x');
-        const result = parser('xyyx and etc.');
-        
-        match(result).with( {
-            value: ['x','yy', 'x'],
-            rest: ' and etc.'
-        });
-    });
+describe("all", function () {
+  it("implicit `word`", function () {
+    const parser = all("x", "yy", "x");
+    const result = parser("xyyx and etc.");
 
-    it('word not null',function(){
-        const parser = word('text');
-        const result = parser('text and etc.');
-        
-        match(result).with( { value: 'text', rest: ' and etc.' });
+    match(result).with({
+      value: ["x", "yy", "x"],
+      rest: " and etc.",
     });
+  });
 
-    it('word not null',function(){
-        const parser = word('test');
-        const result = parser('test and etc.');
-        
-        match(result).with({
-            value:'test',
-            rest:' and etc.'
-        });
-    });
+  it("word not null", function () {
+    const parser = word("text");
+    const result = parser("text and etc.");
 
-    it('word null',function(){
-        const parser = word('text');
-        const result = parser('zzztext and etc.');
-        
-        match(result).with({ failed: true });
-    });
-    
-    it('between not null',function(){
-        const parser = between(charIs('('), charOneOf('xyz'), charIs(')'));
-        const result = parser('(x)xxx');
-        
-        match(result).with( { value: 'x', rest: 'xxx' });
-    });
+    match(result).with({ value: "text", rest: " and etc." });
+  });
 
-    it('between null',function(){
-        const parser = between(charIs('('), charOneOf('xyz'), charIs(')'));
-        const result = parser('(1)xxx');
-        
-        match(result).with({ failed: true });
-    });
+  it("word not null", function () {
+    const parser = word("test");
+    const result = parser("test and etc.");
 
-    it('between implicit `word`',function(){
-        const parser = between('(', 'xyz', ')');
-        const result = parser('(xyz)xxx');
-        
-        match(result).with( {
-            value:'xyz',
-            rest:'xxx'
-        });
+    match(result).with({
+      value: "test",
+      rest: " and etc.",
     });
+  });
 
-    it('first not null when match',function(){
-        const parser = first(charOneOf('xyz'), charIs('/'));
-        const result = parser('x/rest');
-        
-        match(result).with({
-            value:'x',
-            rest:'rest'
-        });
-    });
+  it("word null", function () {
+    const parser = word("text");
+    const result = parser("zzztext and etc.");
 
-    it('first is null when no match',function(){
-        const parser = first(charOneOf('xyz'), charIs('/'));
-        const result = parser('k\\rest');
-        
-        match(result).with({ failed: true });
-    });
+    match(result).with({ failed: true });
+  });
 
-    it('second implicit `word`',function(){
-        const parser = first('xyz', '/');
-        const result = parser('xyz/rest');
-        
-        match(result).with({
-            value:'xyz',
-            rest:'rest'
-        });
-    });
+  it("between not null", function () {
+    const parser = between(charIs("("), charOneOf("xyz"), charIs(")"));
+    const result = parser("(x)xxx");
 
+    match(result).with({ value: "x", rest: "xxx" });
+  });
 
-    it('second not null when match',function(){
-        const parser = second(charIs('\\'), charOneOf('xyz'));
-        const result = parser('\\xxxx');
-        
-        match(result).with( { value: 'x', rest: 'xxx' });
-    });
+  it("between null", function () {
+    const parser = between(charIs("("), charOneOf("xyz"), charIs(")"));
+    const result = parser("(1)xxx");
 
-    it('second is null when no match',function(){
-        const parser = second(charIs('\\'), charOneOf('xyz'));
-        const result = parser('/xxxx');
-        
-        match(result).with({ failed: true });
-    });
+    match(result).with({ failed: true });
+  });
 
-    it('second implicit `word`',function(){
-        const parser = second('\\','xyz');
-        const result = parser('\\xyzxxx');
-        
-        match(result).with( {
-            value:'xyz',
-            rest:'xxx'
-        });
-    });
-    
-    it('all not null when match',function(){
-        const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        const result = parser('xyz1rest');
-        
-        match(result).with({
-            value:['x','y','z','1'],
-            rest:'rest'
-        });
-    });
+  it("between implicit `word`", function () {
+    const parser = between("(", "xyz", ")");
+    const result = parser("(xyz)xxx");
 
-    it('all first null',function(){
-        const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        const result = parser('_yz1rest');
-        
-        match(result).with({ failed: true });
+    match(result).with({
+      value: "xyz",
+      rest: "xxx",
     });
+  });
 
-    it('all second null',function(){
-        const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        const result = parser('x_z1rest');
-        
-        match(result).with({ failed: true });
-    });
-    
-    it('all third null',function(){
-        const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        const result = parser('xy_1rest');
-        
-        match(result).with({ failed: true });
-    });
-    
-    it('all fourth null',function(){
-        const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        const result = parser('xyz_rest');
-        
-        match(result).with({ failed: true });
-    });
+  it("first not null when match", function () {
+    const parser = first(charOneOf("xyz"), charIs("/"));
+    const result = parser("x/rest");
 
-    it('all empty null',function(){
-        const parser = all(charIs('x'),charIs('y'),charIs('z'),charIs('1'));
-        const result = parser('');
-        
-        match(result).with({ failed: true });
-    })
+    match(result).with({
+      value: "x",
+      rest: "rest",
+    });
+  });
+
+  it("first is null when no match", function () {
+    const parser = first(charOneOf("xyz"), charIs("/"));
+    const result = parser("k\\rest");
+
+    match(result).with({ failed: true });
+  });
+
+  it("second implicit `word`", function () {
+    const parser = first("xyz", "/");
+    const result = parser("xyz/rest");
+
+    match(result).with({
+      value: "xyz",
+      rest: "rest",
+    });
+  });
+
+  it("second not null when match", function () {
+    const parser = second(charIs("\\"), charOneOf("xyz"));
+    const result = parser("\\xxxx");
+
+    match(result).with({ value: "x", rest: "xxx" });
+  });
+
+  it("second is null when no match", function () {
+    const parser = second(charIs("\\"), charOneOf("xyz"));
+    const result = parser("/xxxx");
+
+    match(result).with({ failed: true });
+  });
+
+  it("second implicit `word`", function () {
+    const parser = second("\\", "xyz");
+    const result = parser("\\xyzxxx");
+
+    match(result).with({
+      value: "xyz",
+      rest: "xxx",
+    });
+  });
+
+  it("all not null when match", function () {
+    const parser = all(charIs("x"), charIs("y"), charIs("z"), charIs("1"));
+    const result = parser("xyz1rest");
+
+    match(result).with({
+      value: ["x", "y", "z", "1"],
+      rest: "rest",
+    });
+  });
+
+  it("all first null", function () {
+    const parser = all(charIs("x"), charIs("y"), charIs("z"), charIs("1"));
+    const result = parser("_yz1rest");
+
+    match(result).with({ failed: true });
+  });
+
+  it("all second null", function () {
+    const parser = all(charIs("x"), charIs("y"), charIs("z"), charIs("1"));
+    const result = parser("x_z1rest");
+
+    match(result).with({ failed: true });
+  });
+
+  it("all third null", function () {
+    const parser = all(charIs("x"), charIs("y"), charIs("z"), charIs("1"));
+    const result = parser("xy_1rest");
+
+    match(result).with({ failed: true });
+  });
+
+  it("all fourth null", function () {
+    const parser = all(charIs("x"), charIs("y"), charIs("z"), charIs("1"));
+    const result = parser("xyz_rest");
+
+    match(result).with({ failed: true });
+  });
+
+  it("all empty null", function () {
+    const parser = all(charIs("x"), charIs("y"), charIs("z"), charIs("1"));
+    const result = parser("");
+
+    match(result).with({ failed: true });
+  });
 });
 
-describe('anyChar', function(){
-    it('value and rest are not when match', function(){
-        const parser = anyChar();
-        const result = parser('123');
-        
-        match(result).with( { value: '1', rest: '23' });
-    });
+describe("anyChar", function () {
+  it("value and rest are not when match", function () {
+    const parser = anyChar();
+    const result = parser("123");
 
-    it('empty string should fail', function(){
-        const parser = anyChar();
-        const result = parser('');
+    match(result).with({ value: "1", rest: "23" });
+  });
 
-        match(result).with({ failed: true });
-    });
+  it("empty string should fail", function () {
+    const parser = anyChar();
+    const result = parser("");
 
-    it('null should fail', function(){
-        const parser = anyChar();
-        const result = parser(null);
+    match(result).with({ failed: true });
+  });
 
-        match(result).with({ failed: true });
-    })
+  it("null should fail", function () {
+    const parser = anyChar();
+    const result = parser(null);
+
+    match(result).with({ failed: true });
+  });
 });
 
-describe('foldLeft / foldRight', function() {
-    const num = rep1(charOneOf('0123456789')).map(function(x){
-        return parseInt(x.join(''));
-    });
-    const minus = charIs('-');
+describe("errors", function () {
+  it("carries the position and expected", function () {
+    const parser = word("abc");
+    const result = parser("abx");
 
-    it('foldLeft builds a left-leaning AST with the default apply', function(){
-        const parser = foldLeft(num, minus);
-        const result = parser('2-3-4');
+    match(result).with({ failed: true, pos: 2, expected: ['"c"'] });
+  });
 
-        match(result).with( { value: ['-', ['-', 2, 3], 4], rest: '' });
-    });
+  it("or keeps the furthest failure and unions expectations", function () {
+    const parser = or(word("ab"), word("ax"));
+    const result = parser("az");
 
-    it('foldRight builds a right-leaning AST with the default apply', function(){
-        const parser = foldRight(num, minus);
-        const result = parser('2-3-4');
+    match(result).with({ failed: true, pos: 1, expected: ['"b"', '"x"'] });
+  });
 
-        match(result).with( { value: ['-', 2, ['-', 3, 4]], rest: '' });
-    });
+  it("all propagates the first failure", function () {
+    const parser = all(charIs("a"), charIs("b"));
+    const result = parser("ax");
 
-    it('foldLeft folds left with a custom apply', function(){
-        const parser = foldLeft(num, minus, function(op, a, b){ return a - b; });
-        const result = parser('2-3-4');
-
-        match(result).with( { value: -5, rest: '' });
-    });
-
-    it('foldRight folds right with a custom apply', function(){
-        const parser = foldRight(num, minus, function(op, a, b){ return a - b; });
-        const result = parser('2-3-4');
-
-        match(result).with( { value: 3, rest: '' });
-    });
-
-    it('foldLeft returns the head unchanged for a single operand', function(){
-        const left = foldLeft(num, minus, function(op, a, b){ return a - b; });
-
-        match(left('7')).with({ value: 7, rest: '' });
-    });
-
-    it('foldRight returns the head unchanged for a single operand', function(){
-        const right = foldRight(num, minus, function(op, a, b){ return a - b; });
-
-        match(right('7')).with({ value: 7, rest: '' });
-    });
-
-    it('foldLeft validates its arguments', function(){
-        // @ts-expect-error — foldLeft is deliberately called with one combinator
-        match(thrown(function(){ foldLeft(word('a')); })).with(instanceOf(Error, { message: re(/accepts two combinators/) }));
-    });
-
-    it('foldLeft validates the optional apply', function(){
-        // @ts-expect-error — foldLeft is deliberately given a non-function
-        match(thrown(function(){ foldLeft(word('a'), word('a'), 'nope'); })).with(instanceOf(Error, { message: re(/optional apply function/) }));
-    });
-
-    it('foldRight validates the optional apply', function(){
-        // @ts-expect-error — foldRight is deliberately given a non-function
-        match(thrown(function(){ foldRight(word('a'), word('a'), 'nope'); })).with(instanceOf(Error, { message: re(/optional apply function/) }));
-    });
+    match(result).with({ failed: true, pos: 1, expected: ['"b"'] });
+  });
 });
 
-describe('errors', function(){
-    it('carries the position and expected', function(){
-        const parser = word('abc');
-        const result = parser('abx');
+describe("argument validation", function () {
+  it("word rejects an empty string at construction", function () {
+    match(
+      thrown(function () {
+        word("");
+      }),
+    ).with(instanceOf(Error, { message: re(/non-empty string/) }));
+  });
 
-        match(result).with( { failed: true, pos: 2, expected: ['"c"'] });
-    });
+  it("rep1 requires at least one combinator", function () {
+    match(
+      thrown(function () {
+        rep1();
+      }),
+    ).with(instanceOf(Error, { message: re(/at least one combinator/) }));
+  });
 
-    it('or keeps the furthest failure and unions expectations', function(){
-        const parser = or(word('ab'), word('ax'));
-        const result = parser('az');
+  it("rep0 requires at least one combinator", function () {
+    match(
+      thrown(function () {
+        rep0();
+      }),
+    ).with(instanceOf(Error, { message: re(/at least one combinator/) }));
+  });
 
-        match(result).with( { failed: true, pos: 1, expected: ['"b"', '"x"'] });
-    });
-
-    it('all propagates the first failure', function(){
-        const parser = all(charIs('a'), charIs('b'));
-        const result = parser('ax');
-
-        match(result).with( { failed: true, pos: 1, expected: ['"b"'] });
-    });
-});
-
-describe('argument validation', function(){
-    it('word rejects an empty string at construction', function(){
-        match(thrown(function(){ word(''); })).with(instanceOf(Error, { message: re(/non-empty string/) }));
-    });
-
-    it('rep1 requires at least one combinator', function(){
-        match(thrown(function(){ rep1(); })).with(instanceOf(Error, { message: re(/at least one combinator/) }));
-    });
-
-    it('rep0 requires at least one combinator', function(){
-        match(thrown(function(){ rep0(); })).with(instanceOf(Error, { message: re(/at least one combinator/) }));
-    });
-
-    it('optional requires at least one combinator', function(){
-        match(thrown(function(){ optional(); })).with(instanceOf(Error, { message: re(/at least one combinator/) }));
-    });
+  it("optional requires at least one combinator", function () {
+    match(
+      thrown(function () {
+        optional();
+      }),
+    ).with(instanceOf(Error, { message: re(/at least one combinator/) }));
+  });
 });

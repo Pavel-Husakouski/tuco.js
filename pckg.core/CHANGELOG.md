@@ -2,6 +2,7 @@
 
 # version 1.0.0
 
+- [x] 37 [breaking] Remove `foldLeft`/`foldRight` from the API (and internal `__chain`/`__defaultApply`/`__foldl`/`__foldr`); the calculator demo folds `[op, a, b]` chains via `all`/`rep0` + a local fold; drop the core `foldLeft`/`foldRight` tests; update the default export and rebuild `lib/`
 - [x] 36 [build] Add publish files to `package.json` `files`: `lib`, `README.md`, `CHANGELOG.md`, `LICENSE`
 - [x] 35 [docs] Rename `TODO.md` to `CHANGELOG.md` and update the references in `CLAUDE.md` (section header + text) and the self-references in the changelog
 - [x] 34 [tests] Replace `node:assert` (`deepEqual`/`strictEqual`/`assert`/`throws`) with `@beeff/loose-match` matchers in every test: one `match(...).with(...)` per test; add `@beeff/loose-match` to devDeps; rewrite the `DESIGN.md` test-style section
@@ -68,7 +69,7 @@
   - If `parser(text)` returns `null` — it crashes on `result.rest`. It only survives now because `query` never returns `null` (all parts are under `optional`) — that's non-obvious and worth a comment.
 
 - [x] 9 [design] `null` as an error loses position and expectations
-  - You can't tell *where* parsing stopped and *what* was expected. That's why the query demo grew the `parseWithRestore` hack (rewrites the input, replacing the "bad" character with a space).
+  - You can't tell _where_ parsing stopped and _what_ was expected. That's why the query demo grew the `parseWithRestore` hack (rewrites the input, replacing the "bad" character with a space).
   - Option: return `{expected, pos}` or a failure object instead of `null` — removes the need for the workaround.
 
 - [x] 8 [design] O(n²) on slices
@@ -83,7 +84,7 @@
 
 - [x] 6 [bug] `assert(r, {...})` instead of `assert.deepEqual`
   - Where: `test/tuco.test.js:420` (the "all not null when match" test).
-  - Effect: the second `assert` argument is a *message*, not an expectation: values are never checked, the test passes "by luck".
+  - Effect: the second `assert` argument is a _message_, not an expectation: values are never checked, the test passes "by luck".
   - Fix: `assert.deepEqual(r, { value:['x','y','z','1'], rest:'rest' });`.
 
 - [x] 5 [bug] `!result == null` — a dead guard due to operator precedence
