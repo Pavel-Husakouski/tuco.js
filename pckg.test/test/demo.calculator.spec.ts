@@ -27,7 +27,7 @@ import {
 } from "@beeff/tuco";
 
 const number = rep1(charOneOf("0123456789")).map(function (x) {
-  return parseInt(x.join(""));
+  return parseInt(x.join(""), 10);
 });
 
 const isLetter = function (c: string) {

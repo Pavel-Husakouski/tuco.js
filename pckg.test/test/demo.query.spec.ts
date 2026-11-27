@@ -112,9 +112,10 @@ const parseQuery = complete(query);
 function buildClauses(result: any): any[] {
   if (result === null) return [];
 
-  if (result.kind in { word: 0, verbatim: 0 }) return [result.value];
+  if (result.kind === "word" || result.kind === "verbatim")
+    return [result.value];
 
-  if (result.kind in { OR: 0, AND: 0 })
+  if (result.kind === "OR" || result.kind === "AND")
     return buildClauses(result.left).concat(buildClauses(result.right));
 
   throw new Error("wrong kind");
