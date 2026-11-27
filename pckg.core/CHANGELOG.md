@@ -2,6 +2,19 @@
 
 # version 1.0.0-rc3
 
+- [x] 66 [docs] `readme.md` documents only one combinator and links to unshipped `pckg.test/test/demo*.spec.ts` — write a full API reference (signature, value shape, one example per combinator) and note ESM-only + `rep0`→`[]` semantics
+- [x] 65 [feature] Structured diagnostics: `Fail` with `line`/`column` and a `formatFail(fail, input)` renderer (excerpt + caret); keep `{ pos, expected[] }` backward-compatible
+- [x] 64 [bug] `optional`/`rep0`/`or` discard inner failures — keep a furthest-failure accumulator so errors point at the real position instead of degrading to `end of input`
+- [x] 63 [design] Security guards: input-length cap, depth/step budget, and `try`/`catch` at the `__expose` boundary to turn `RangeError` into a `Fail`
+- [x] 62 [design] `or` backtracking is exponential without memoization — add a packrat cache or a step budget (currently only documented in DESIGN.md)
+- [x] 61 [design] `__isArray` via `Object.prototype.toString` → `Array.isArray` (the `toString` form is spoofable via `Symbol.toStringTag`)
+- [x] 60 [design] `word` builds one parser per character (`text.split("")`) → direct `str.startsWith(text, pos)` (also drops ~5 MB retention on long literals)
+- [x] 59 [bug] `byName` in `demo.abnf` keys a `{}` by grammar-controlled names — prototype pollution via `__proto__`; use `Object.create(null)` or `Map`
+- [x] 58 [design] `.map` projections `toRightArg`/`toLeftArg` mutate the AST node — return fresh `{ ...op, ... }` nodes
+- [x] 57 [design] demo cleanups: `result.kind in { word: 0, verbatim: 0 }` → direct compare/`Set`; `parseInt(x.join(""))` add radix `10`
+- [x] 56 [tests] test hygiene: mislabeled "rep0 single not null" (calls `rep1`), duplicate "word not null" titles, "shows the ASTs" with zero assertions
+- [x] 55 [build] `pckg.test` is CJS-by-default (`type` missing, `.mocharc.js` `module.exports`, `outDir: "../lib"` leaks to repo root)
+- [x] 54 [docs] DESIGN.md consistency: `const`-by-default vs `function` declarations, "one match per test" vs `throw` guards, direct `.value` access in demos
 - [x] 53 [bug] `rep1`/`rep0`: iterative rewrite + progress guard — fixes the O(n²) `concat` rebuild, the ~5k-item stack overflow, and zero-width parsers looping forever
 - [x] 52 [breaking] `Combinator`/`Parser` contract lies: combinators receive an internal `Cursor`, not the declared `string|null` — restrict `Combinator` to `string | Parser<A>` and add `defer` (option C); hand-written raw functions no longer accepted
 - [x] 51 [bug] `optional(...)(null)`/`rep0(...)(null)` throw `TypeError`; normalize `null` to an empty cursor in `__toCursor`
